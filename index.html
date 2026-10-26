@@ -954,11 +954,16 @@ async function openNotify(r, lang = 'en', opts = {}) {
   $('#nEdit') && ($('#nEdit').onclick = () => openCustomerForm(r.program, r));
   $('#nRemove') && ($('#nRemove').onclick = async e => {
     const b = e.currentTarget;
-    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Click again to remove'; return; }
+    if (b.dataset.confirm !== '1') {
+      b.dataset.confirm = '1'; b.textContent = 'Click again to remove';
+      b.closest('.spread').querySelector('.small').innerHTML = '<b style="color:var(--red)">This also deletes their issued certificates and contact history, and removes them from the stats. It can’t be undone.</b>';
+      return;
+    }
     busy(b, true);
     const { error } = await sb.rpc('delete_recognition', { p_id: r.id });
     if (error) { busy(b, false); return toast(error.message, 'err'); }
-    toast(`${r.display_name} removed`); closeModal(); if (ADM.tab === 'notify') loadNotify();
+    toast(`${r.display_name} removed`); closeModal();
+    if (ADM.tab === 'notify') loadNotify(); else if (ADM.tab === 'overview') viewOverview(); else if (ADM.tab === 'letters') loadLetters();
   });
   $('#nCopyLink').onclick = () => copyText(v.link, 'Link copied');
   $('#nCopyMail').onclick = () => copyText(`${$('#nSubj').value}\n\n${$('#nBody').value}`, 'Message copied');

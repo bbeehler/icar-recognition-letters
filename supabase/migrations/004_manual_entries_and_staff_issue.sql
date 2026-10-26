@@ -143,3 +143,22 @@ begin
 end $$;
 revoke execute on function public.delete_recognition from public, anon, authenticated;
 grant execute on function public.delete_recognition to authenticated;
+
+-- Removing a customer also deletes their certificates and contact history, so they drop out of the stats
+drop function if exists public.delete_recognition(bigint);
+create function public.delete_recognition(p_id bigint) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare v_rec public.recognitions; v_letters integer; v_contacts integer;
+begin
+  if not public.is_admin() then raise exception 'Only admins can remove customers.' using errcode = '42501'; end if;
+  select * into v_rec from public.recognitions where id = p_id and source = 'manual';
+  if not found then raise exception 'Only manually added records can be removed here.' using errcode = '22023'; end if;
+  delete from public.letter_requests where program = v_rec.program and icar_id_norm = v_rec.icar_id_norm;
+  get diagnostics v_letters = row_count;
+  delete from public.customer_contacts where program = v_rec.program and icar_id_norm = v_rec.icar_id_norm;
+  get diagnostics v_contacts = row_count;
+  delete from public.recognitions where id = p_id;
+  return jsonb_build_object('ok', true, 'letters', v_letters, 'contacts', v_contacts);
+end $$;
+revoke execute on function public.delete_recognition from public, anon, authenticated;
+grant execute on function public.delete_recognition to authenticated;
