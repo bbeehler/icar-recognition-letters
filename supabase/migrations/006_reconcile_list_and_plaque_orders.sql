@@ -91,7 +91,8 @@ begin
       when not was_active then 'returned'
       when new_exp is not null and new_exp > coalesce(old_exp, '1900-01-01') then 'renewed'
       when old_alu is distinct from new_alu then 'level'
-      else null end;
+      else null end
+   where true;  -- the API blocks UPDATE without WHERE
   update _chg set kind = case
       when status is null then null
       when status = 'new' then 'plaque'
@@ -102,7 +103,8 @@ begin
       when status = 'new' then 'New Gold Class store'
       when old_alu is distinct from new_alu then case when new_alu then 'Now Gold Class – Aluminum' else 'Now Gold Class (no longer Aluminum)' end
       when status = 'returned' then 'Back on the list'
-      else 'Renewed' end;
+      else 'Renewed' end
+   where true;
 
   select count(*) filter (where old_source = 'manual') into v_merged from _chg;
 
