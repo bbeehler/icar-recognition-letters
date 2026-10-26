@@ -279,9 +279,10 @@ function pickTemplate(content, L, lang) {
 async function buildLetterPdf(L, content, opts = {}) {
   const { jsPDF } = window.jspdf;
   const withCert = opts.certificate !== false;
-  const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
-  let first = 1;
-  if (withCert) { await drawCertificate(doc, L); doc.addPage('letter', 'portrait'); first = 2; }
+  const doc = opts.doc || new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
+  if (opts.doc && opts.append) doc.addPage('letter', 'portrait');
+  let first = doc.getNumberOfPages();
+  if (withCert) { await drawCertificate(doc, L); doc.addPage('letter', 'portrait'); first = doc.getNumberOfPages(); }
   const S = content.settings || {};
   const lang = L.language === 'fr' ? 'fr' : 'en';
   const tpl = pickTemplate(content, L, lang);
@@ -426,6 +427,7 @@ const T = {
     again: 'Download again', another: 'Request another letter',
     err: {
       not_found: 'We couldn’t find a match. Check the store number and the business postal code. If your Gold Class® recognition is recent, our list may not be updated yet. Please contact us.',
+      off_list: () => 'This store isn’t on the current Gold Class list, so we can’t issue a certificate. If you believe this is a mistake, please contact us.',
       expired: d => `Our records show this store’s Gold Class® recognition expired${d ? ' on ' + d : ''}. If you have renewed, our list may not be updated yet. Please contact us.`,
       too_many_attempts: 'Too many attempts for this store number. Please try again in an hour or contact us.',
       invalid_contact: 'Enter your name and a valid email address.',
@@ -452,6 +454,7 @@ const T = {
     again: 'Télécharger de nouveau', another: 'Demander une autre lettre',
     err: {
       not_found: 'Aucune correspondance trouvée. Vérifiez le numéro d’atelier et le code postal de l’entreprise. Si votre reconnaissance Gold Class® est récente, notre liste n’est peut-être pas encore à jour. Veuillez communiquer avec nous.',
+      off_list: () => 'Cet atelier ne figure pas sur la liste Gold Class actuelle, nous ne pouvons donc pas émettre de certificat. Si vous croyez qu’il s’agit d’une erreur, veuillez communiquer avec nous.',
       expired: d => `Selon nos dossiers, la reconnaissance Gold Class® de cet atelier a expiré${d ? ' le ' + d : ''}. Si vous l’avez renouvelée, notre liste n’est peut-être pas encore à jour. Veuillez communiquer avec nous.`,
       too_many_attempts: 'Trop de tentatives pour ce numéro d’atelier. Réessayez dans une heure ou communiquez avec nous.',
       invalid_contact: 'Entrez votre nom et une adresse courriel valide.',
@@ -562,7 +565,7 @@ function renderReady() {
    STAFF BACK END
    ===================================================================== */
 const ADM = { session: null, staff: null, tab: 'overview' };
-const TABS = [['overview', 'Overview'], ['notify', 'Notify customers'], ['lists', 'Gold Class list'], ['letters', 'Certificates issued'], ['design', 'Letter & email wording'], ['team', 'Team']];
+const TABS = [['overview', 'Overview'], ['notify', 'Notify customers'], ['lists', 'Gold Class list'], ['orders', 'St. Joseph orders'], ['letters', 'Certificates issued'], ['design', 'Letter & email wording'], ['team', 'Team']];
 
 function authCard(inner) { return `${siteHead('', 'Recognition certificates · Staff')}<main class="pub" style="max-width:460px"><div class="panel">${inner}</div></main>`; }
 
@@ -666,7 +669,7 @@ function renderAdminShell() {
   $('#outBtn').onclick = signOut;
   $('#pwBtn').onclick = () => renderChangePassword(false);
   $$('[data-tab]').forEach(b => b.onclick = () => { ADM.tab = b.dataset.tab; renderAdminShell(); });
-  ({ overview: viewOverview, notify: viewNotify, lists: viewLists, letters: viewLetters, design: viewDesign, team: viewTeam })[ADM.tab]();
+  ({ overview: viewOverview, notify: viewNotify, lists: viewLists, orders: viewOrders, letters: viewLetters, design: viewDesign, team: viewTeam })[ADM.tab]();
 }
 const view = () => $('#view');
 function loading() { view().innerHTML = '<div class="center" style="min-height:200px"><span class="spinner" style="color:#006cb4"></span></div>'; }
@@ -674,9 +677,11 @@ function progBadge(r) { return r && r.aluminum ? '<span class="badge gold">Gold 
 function goTab(t) { ADM.tab = t; renderAdminShell(); }
 const todayISO = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
 const isExpired = r => !!(r && r.expires_on && r.expires_on < todayISO());
+const CHG_LABEL = { new: 'New', renewed: 'Renewed', returned: 'Back on the list', level: 'Level changed' };
 function recBadges(r) {
   return [r.aluminum ? '<span class="badge gold">Aluminum</span>' : '',
-    isExpired(r) ? '<span class="badge off">Expired</span>' : r.change_status === 'new' ? '<span class="badge ok">New</span>' : r.change_status === 'renewed' ? '<span class="badge ok">Renewed</span>' : '',
+    r.is_active === false ? '<span class="badge off">Off the list</span>' : isExpired(r) ? '<span class="badge off">Expired</span>' : CHG_LABEL[r.change_status] ? `<span class="badge ok">${CHG_LABEL[r.change_status]}</span>` : '',
+    r.pending_order ? `<span class="badge blue" title="Waiting for the next St. Joseph order">${r.pending_order === 'plaque' ? 'Plaque' : 'Year plate'} to order</span>` : '',
     r.source === 'manual' ? '<span class="badge blue" title="Added by hand, not from the uploaded list">Added manually</span>' : ''].filter(Boolean).join(' ');
 }
 
@@ -695,7 +700,9 @@ async function viewOverview() {
       <div class="stat"><div class="n">${n('unique_recipients')}</div><div class="l">Stores with a certificate</div></div>
       <div class="stat"><div class="n">${n('letters_total')}</div><div class="l">Certificates issued (${n('letters_30d')} in 30 days)</div></div>
       <div class="stat"><div class="n">${n('expired')}</div><div class="l">Expired, can’t download</div></div>
+      <div class="stat"><div class="n">${n('off_list')}</div><div class="l">Off the list (kept on file)</div></div>
     </div>
+    ${st.pending_plaques || st.pending_plates ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${n('pending_plaques')}</b> plaques and <b>${n('pending_plates')}</b> year plates are waiting for the next St. Joseph order.</span><button class="btn sm" data-go="orders">Build the order</button></div>` : ''}
     ${st.new ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${n('new')}</b> stores are new or renewed since the last upload.</span><button class="btn sm" data-go="notify" data-st="new">Notify them</button></div>`
       : st.not_contacted ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${n('not_contacted')}</b> stores haven’t been told about their certificate yet.</span><button class="btn sm" data-go="notify" data-st="not_contacted">Notify customers</button></div>` : ''}
     <div class="grid2">
@@ -809,19 +816,19 @@ async function viewNotify() {
   loadNotify();
 }
 let NROWS = [];
-const NF_CHIPS = [['new', 'New or renewed'], ['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no certificate yet'], ['downloaded', 'Certificate issued'], ['expired', 'Expired'], ['all', 'All']];
+const NF_CHIPS = [['new', 'New or renewed'], ['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no certificate yet'], ['downloaded', 'Certificate issued'], ['expired', 'Expired'], ['off', 'Off the list'], ['all', 'All on the list']];
 async function loadNotify() {
   const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: NF.size, p_offset: NF.page * NF.size });
   const res = $('#nfRes'); if (!res) return;
   if (error) return res.innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
   const s = data.summary || {};
-  $('#nfChips').innerHTML = NF_CHIPS.filter(([k]) => k === NF.status || k === 'all' || !['new', 'expired'].includes(k) || s[k])
+  $('#nfChips').innerHTML = NF_CHIPS.filter(([k]) => k === NF.status || k === 'all' || !['new', 'expired', 'off'].includes(k) || s[k])
     .map(([k, l]) => `<button class="chip ${NF.status === k ? 'on' : ''}" data-ns="${k}">${l}<span class="c">${(s[k === 'all' ? 'total' : k] || 0).toLocaleString()}</span></button>`).join('');
   $$('[data-ns]').forEach(b => b.onclick = () => { NF.status = b.dataset.ns; NF.page = 0; loadNotify(); });
   NROWS = data.rows || [];
   if (!s.total) return res.innerHTML = `<div class="alert warn">No stores on the Gold Class list yet. <a href="#" id="toLists">Upload the list</a>, or use <b>+ Add a store</b>.</div>`, $('#toLists').onclick = e => { e.preventDefault(); goTab('lists'); };
   const pages = Math.max(1, Math.ceil((data.total || 0) / NF.size));
-  const status = r => r.letters > 0 ? `<span class="badge ok">Certificate issued</span><div class="sub">${esc(fmtShort(r.last_letter_at))}</div>`
+  const status = r => r.is_active === false ? `<span class="badge off">Off the list</span><div class="sub">since ${esc(fmtShort(r.off_list_since))}</div>` : r.letters > 0 ? `<span class="badge ok">Certificate issued</span><div class="sub">${esc(fmtShort(r.last_letter_at))}</div>`
     : isExpired(r) ? '<span class="badge off">Expired</span>'
     : r.last_contact_at ? `<span class="badge blue">${r.last_contact_method === 'phone' ? 'Phoned' : 'Emailed'}</span><div class="sub">${esc(fmtShort(r.last_contact_at))}${r.last_contact_by ? ' · ' + esc(r.last_contact_by) : ''}${r.contacts > 1 ? ` · ${r.contacts} contacts` : ''}</div>`
     : '<span class="badge warn">Not contacted</span>';
@@ -853,8 +860,8 @@ async function openNotify(r, lang = 'en', opts = {}) {
       <div class="lang-toggle" role="group" aria-label="Message language"><button data-nl="en" class="${lang === 'en' ? 'on' : ''}">English</button><button data-nl="fr" class="${lang === 'fr' ? 'on' : ''}">Français</button></div>
     </div>
     <div class="refbox" style="margin-bottom:18px"><div class="spread"><div><b>Issue it now</b><div class="small muted">Their ${lang === 'fr' ? 'French' : 'English'} certificate and letter, logged under your name.</div></div>
-      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn" id="nIssueMail" style="flex:0 0 auto" title="Creates an Outlook email with the PDF attached" ${isExpired(r) ? 'disabled' : ''}>Email it with attachment</button><button class="btn secondary" id="nIssue" style="flex:0 0 auto" ${isExpired(r) ? 'disabled' : ''}>Download only</button></div></div>
-      <div id="nIssueMsg">${isExpired(r) ? `<div class="alert warn" style="margin-top:12px">This store’s Gold Class expired on ${esc(fmtShort(r.expires_on))}, so it can’t get a certificate and its link won’t work. If it has renewed, use <b>Edit details</b> below to update the expiry date, or wait for next month’s list.</div>` : ''}</div></div>
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn" id="nIssueMail" style="flex:0 0 auto" title="Creates an Outlook email with the PDF attached" ${isExpired(r) || r.is_active === false ? 'disabled' : ''}>Email it with attachment</button><button class="btn secondary" id="nIssue" style="flex:0 0 auto" ${isExpired(r) || r.is_active === false ? 'disabled' : ''}>Download only</button></div></div>
+      <div id="nIssueMsg">${r.is_active === false ? `<div class="alert warn" style="margin-top:12px">This store isn’t on the latest Gold Class list (off since ${esc(fmtShort(r.off_list_since))}), so it can’t get a certificate and its link won’t work. It comes back automatically if a later list includes it.</div>` : isExpired(r) ? `<div class="alert warn" style="margin-top:12px">This store’s Gold Class expired on ${esc(fmtShort(r.expires_on))}, so it can’t get a certificate and its link won’t work. If it has renewed, use <b>Edit details</b> below to update the expiry date, or wait for next month’s list.</div>` : ''}</div></div>
     <label class="f" for="nLink">Or send them their personal link</label>
     <div class="copyrow"><input id="nLink" type="text" readonly value="${esc(v.link)}"><button class="btn secondary" id="nCopyLink">Copy link</button></div>
     <div class="help">Opens the certificate page with their store number filled in. They confirm with their business postal code.</div>
@@ -875,6 +882,8 @@ async function openNotify(r, lang = 'en', opts = {}) {
         <button class="btn secondary block" id="nLogPhone" style="margin-top:10px">✓ Log phone call</button>
       </div>
     </div>
+    <div class="spread" style="margin-top:20px;border-top:1px solid var(--gray-25);padding-top:14px"><span class="small">${r.pending_order ? `<b>${r.pending_order === 'plaque' ? 'Plaque' : 'Year plate'}</b> waiting for the next St. Joseph order.` : '<b>St. Joseph order:</b> plaques and year plates are queued automatically from each upload. Add this store by hand if needed.'}</span>
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn sm secondary" data-pq="plaque">${r.pending_order === 'plaque' ? '✓ Plaque queued' : 'Order a plaque'}</button><button class="btn sm secondary" data-pq="plate">${r.pending_order === 'plate' ? '✓ Plate queued' : 'Order a year plate'}</button></div></div>
     <h3 class="section-head" style="margin:24px 0 6px">History</h3><ul class="history" id="nHist"><li class="muted">Loading…</li></ul>
     <div class="spread" style="margin-top:16px;border-top:1px solid var(--gray-25);padding-top:14px"><span class="small muted">${r.source === 'manual' ? `Added by hand${r.added_at ? ' on ' + esc(fmtShort(r.added_at)) : ''}.` : 'From the uploaded Gold Class list. Correct the name here and it’s remembered on future uploads.'}</span>
       <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn sm secondary" id="nEdit">Edit details</button>${r.source === 'manual' && ADM.staff.role === 'admin' ? '<button class="btn sm danger" id="nRemove">Remove</button>' : ''}</div></div>`, true);
@@ -931,6 +940,13 @@ async function openNotify(r, lang = 'en', opts = {}) {
     if (error) { busy(b, false); return toast(error.message, 'err'); }
     toast(`${r.display_name} removed`); closeModal();
     if (ADM.tab === 'notify') loadNotify(); else if (ADM.tab === 'overview') viewOverview(); else if (ADM.tab === 'letters') loadLetters();
+  });
+  $$('[data-pq]').forEach(b => b.onclick = async () => {
+    busy(b, true);
+    const { error } = await sb.rpc('add_plaque_item', { p_recognition_id: r.id, p_kind: b.dataset.pq });
+    if (error) { busy(b, false); return toast(error.message, 'err'); }
+    toast(`${b.dataset.pq === 'plaque' ? 'Plaque' : 'Year plate'} added to the next St. Joseph order`);
+    openNotify({ ...r, pending_order: b.dataset.pq }, lang); if (ADM.tab === 'notify') loadNotify();
   });
   $('#nCopyLink').onclick = () => copyText(v.link, 'Link copied');
   $('#nCopyMail').onclick = () => copyText(`${$('#nSubj').value}\n\n${$('#nBody').value}`, 'Message copied');
@@ -1075,10 +1091,10 @@ async function viewLists() {
     <div class="panel"><div class="spread"><h2 style="font-size:24px;margin:0">Gold Class list</h2></div>
       ${l ? `<p style="margin:10px 0 0"><b>${l.row_count.toLocaleString()}</b> stores · ${esc(l.filename || '')}<br><span class="small muted">Uploaded ${esc(fmtDateTime(l.uploaded_at))}</span></p>` : '<div class="alert warn" style="margin-top:10px">No list uploaded yet.</div>'}
       ${manual ? `<p style="margin:8px 0 0"><b>${manual.toLocaleString()}</b> added manually</p>` : ''}
-      <p class="small muted" style="margin:12px 0">Each month, upload the <b>Active Gold Stores</b> export from the I-CAR system (Excel or CSV), as it comes. The app reads the <b>Current</b> sheet, cleans the shop names, flags Aluminum stores and expiry dates, and shows which stores are new or renewed so the team can notify them. Name corrections, stores added manually, certificates and contact history are all kept.</p>
+      <p class="small muted" style="margin:12px 0">Each month, upload the <b>Active Gold Stores</b> export from the I-CAR system (Excel or CSV), as it comes. The app reads the <b>Current</b> sheet and checks it against the stores already on file. Nothing is wiped: stores on the list stay (or come back) on, stores missing from it are marked <b>off the list</b> and kept, and new expiry dates are brought in. Expiry is always checked against the database. New, renewed and changed stores are flagged for notifying, and their plaques and year plates are queued for the St. Joseph order.</p>
       <div class="row" style="gap:8px"><label class="btn" style="flex:0 0 auto">Upload this month’s list…<input type="file" accept=".csv,.xlsx,.xls,.txt" id="upFile" hidden></label><button class="btn ghost" data-add="1" style="flex:0 0 auto">+ Add one store</button></div></div>
     <div class="panel"><h3>Upload history</h3>${hist?.length ? `<div class="tablewrap"><table><thead><tr><th>Uploaded</th><th>File</th><th>Stores</th><th>By</th><th>Status</th></tr></thead><tbody>
-      ${hist.map(h => `<tr><td class="nowrap">${esc(fmtDateTime(h.uploaded_at))}</td><td>${esc(h.filename)}</td><td>${h.row_count.toLocaleString()}</td><td>${esc(h.staff?.full_name || h.staff?.email || '')}</td><td>${h.is_active ? '<span class="badge ok">Current</span>' : '<span class="badge">Replaced</span>'}</td></tr>`).join('')}
+      ${hist.map(h => `<tr><td class="nowrap">${esc(fmtDateTime(h.uploaded_at))}</td><td>${esc(h.filename)}</td><td>${h.row_count.toLocaleString()}</td><td>${esc(h.staff?.full_name || h.staff?.email || '')}</td><td>${h.is_active ? '<span class="badge ok">Current</span>' : '<span class="badge">Earlier</span>'}</td></tr>`).join('')}
     </tbody></table></div>` : '<p class="muted">No uploads yet.</p>'}</div>`;
   $('#upFile').onchange = e => e.target.files[0] && startUpload(e.target.files[0]);
   $$('[data-add]').forEach(b => b.onclick = () => openCustomerForm());
@@ -1156,7 +1172,8 @@ function renderMapping() {
     <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Store #</th><th>Name on certificate</th><th>Postal code</th><th>Level</th><th>Expires</th><th>Phone</th></tr></thead><tbody>
       ${valid.slice(0, 5).map(r => `<tr><td>${esc(r.icar_id)}</td><td>${esc(r.name)}</td><td>${esc(r.postal_code)}</td><td>${r.aluminum ? 'Aluminum' : 'Gold Class'}</td><td class="nowrap">${esc(fmtShort(r.expires_on))}</td><td>${esc(r.contact_phone)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Match the required columns to see a preview.</td></tr>'}
     </tbody></table></div>
-    <button class="btn" id="upGo" style="margin-top:18px" ${missingReq || !valid.length ? 'disabled' : ''}>Replace the Gold Class list with ${plural(ids.size, 'store', 'stores')}</button>
+    <button class="btn" id="upGo" style="margin-top:18px" ${missingReq || !valid.length ? 'disabled' : ''}>Check ${plural(ids.size, 'store', 'stores')} against the database</button>
+    <p class="help">Stores already on file but missing from this file will be marked off the list. Nothing is deleted.</p>
   </div>`;
   $('#upCancel').onclick = () => { UPLOAD = null; $('#uploadArea').innerHTML = ''; };
   $('#upShowMap') && ($('#upShowMap').onclick = ev => { ev.preventDefault(); U.showMap = true; renderMapping(); });
@@ -1166,23 +1183,151 @@ function renderMapping() {
     busy(e.currentTarget, true, 'Uploading…');
     const { data, error } = await sb.rpc('replace_recognition_list', { p_program: 'gold_class', p_filename: U.file, p_rows: valid });
     if (error) { busy(e.currentTarget, false); return toast(error.message, 'err'); }
-    toast(`Gold Class list updated: ${data.inserted.toLocaleString()} stores`);
+    toast(`Gold Class list checked: ${data.inserted.toLocaleString()} stores on the list`);
     LAST_RESULT = { ...data, file: U.file }; UPLOAD = null; viewLists();
   };
 }
 function resultPanel(d) {
-  return `<div class="panel" style="margin-bottom:var(--space-md)"><div class="spread"><h2 style="margin:0;font-size:24px">List updated</h2><button class="btn sm secondary" id="resClose">Close</button></div>
-    <p class="muted" style="margin:4px 0 14px">${esc(d.file)} · ${plural(d.inserted, 'store', 'stores')} loaded${d.merged_manual ? ` · ${plural(d.merged_manual, 'manually added store is', 'manually added stores are')} now on the list` : ''}</p>
+  const n = k => (d[k] || 0).toLocaleString();
+  return `<div class="panel" style="margin-bottom:var(--space-md)"><div class="spread"><h2 style="margin:0;font-size:24px">List checked</h2><button class="btn sm secondary" id="resClose">Close</button></div>
+    <p class="muted" style="margin:4px 0 14px">${esc(d.file)} · ${plural(d.inserted, 'store', 'stores')} on this month’s list${d.merged_manual ? ` · ${plural(d.merged_manual, 'manually added store is', 'manually added stores are')} now on the list` : ''}</p>
+    ${d.first ? '<div class="alert info">First upload: every store is now on file. From next month, the app compares each new list with the database and flags who is new, renewed, back or off the list.</div>' : `
     <div class="stats" style="margin-bottom:12px">
-      <div class="stat alt"><div class="n">${(d.new || 0).toLocaleString()}</div><div class="l">New stores</div></div>
-      <div class="stat alt"><div class="n">${(d.renewed || 0).toLocaleString()}</div><div class="l">Renewed (new expiry date)</div></div>
-      <div class="stat"><div class="n">${(d.dropped || 0).toLocaleString()}</div><div class="l">No longer on the list</div></div>
+      <div class="stat alt"><div class="n">${n('new')}</div><div class="l">New stores</div></div>
+      <div class="stat alt"><div class="n">${n('renewed')}</div><div class="l">Renewed (later expiry date)</div></div>
+      <div class="stat"><div class="n">${n('returned')}</div><div class="l">Back on the list</div></div>
+      <div class="stat"><div class="n">${n('level_changed')}</div><div class="l">Changed level (Aluminum)</div></div>
+      <div class="stat"><div class="n">${n('dropped')}</div><div class="l">Went off the list</div></div>
+      <div class="stat"><div class="n">${n('expired')}</div><div class="l">On the list but expired</div></div>
     </div>
-    ${d.new || d.renewed ? '<button class="btn" id="resNotify">Notify the new and renewed stores</button>' : '<p class="small muted" style="margin:0">On a first upload every store counts as existing. From next month, new and renewed stores are flagged here.</p>'}</div>`;
+    <div class="row" style="gap:8px">${d.new || d.renewed || d.returned || d.level_changed ? '<button class="btn" id="resNotify" style="flex:0 0 auto">Notify the new and renewed stores</button>' : ''}
+      ${d.plaques || d.plates ? `<button class="btn secondary" id="resOrder" style="flex:0 0 auto">St. Joseph order: ${plural(d.plaques, 'plaque', 'plaques')}, ${plural(d.plates, 'year plate', 'year plates')}</button>` : ''}
+      ${d.dropped ? '<button class="btn ghost" id="resOff" style="flex:0 0 auto">See who went off the list</button>' : ''}</div>`}</div>`;
 }
 function bindResult() {
   $('#resClose') && ($('#resClose').onclick = () => { LAST_RESULT = null; $('#uploadArea').innerHTML = ''; });
   $('#resNotify') && ($('#resNotify').onclick = () => { LAST_RESULT = null; NF.status = 'new'; NF.page = 0; NF.q = ''; goTab('notify'); });
+  $('#resOff') && ($('#resOff').onclick = () => { LAST_RESULT = null; NF.status = 'off'; NF.page = 0; NF.q = ''; goTab('notify'); });
+  $('#resOrder') && ($('#resOrder').onclick = () => { LAST_RESULT = null; goTab('orders'); });
+}
+
+/* ---------- St. Joseph plaque and year plate orders ---------- */
+const JSZIP_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+const PROV_ABBR = { 'alberta': 'AB', 'british columbia': 'BC', 'manitoba': 'MB', 'new brunswick': 'NB', 'newfoundland and labrador': 'NL', 'newfoundland': 'NL', 'nova scotia': 'NS',
+  'northwest territories': 'NT', 'nunavut': 'NU', 'ontario': 'ON', 'prince edward island': 'PE', 'quebec': 'QC', 'québec': 'QC', 'saskatchewan': 'SK', 'yukon': 'YT' };
+const provAbbr = p => PROV_ABBR[String(p || '').trim().toLowerCase()] || String(p || '').trim();
+const ORDER_CATS = [];
+for (const alu of [false, true]) for (const kind of ['plaque', 'plate']) for (const lang of ['en', 'fr'])
+  ORDER_CATS.push({ alu, kind, lang, code: `${alu ? 'GCA' : 'GC'} ${kind === 'plaque' ? 'Plaque' : 'Plate'} ${lang === 'fr' ? 'FR' : 'ENG'}` });
+const catOf = it => ORDER_CATS.find(c => c.alu === !!it.aluminum && c.kind === it.kind && c.lang === it.language);
+const monthLabel = (d = new Date()) => d.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
+
+const OF = { sel: new Set() };
+async function viewOrders() {
+  loading();
+  const [{ data: items, error }, { data: orders }] = await Promise.all([
+    sb.from('plaque_items').select('*').is('order_id', null).order('aluminum').order('kind').order('shop_name'),
+    sb.from('plaque_orders').select('id, label, item_count, created_at, staff:created_by(full_name,email)').order('created_at', { ascending: false }).limit(24)]);
+  if (error) return view().innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
+  OF.items = items || []; OF.sel = new Set(OF.items.map(i => i.id));
+  const counts = ORDER_CATS.map(c => [c, OF.items.filter(i => catOf(i) === c).length]).filter(([, n]) => n);
+  view().innerHTML = `<div class="panel">
+    <div class="spread"><div><h2 style="margin:0">St. Joseph order</h2><p class="muted" style="margin:4px 0 0">Each monthly upload queues a <b>plaque</b> for every new store or change of level and a <b>year plate</b> for every renewal. Quebec stores get French. Build the files, send them to St. Joseph, then mark the order as sent.</p></div></div>
+    ${OF.items.length ? `
+    <div class="chips" style="margin:14px 0">${counts.map(([c, n]) => `<span class="chip">${c.code}<span class="c">${n}</span></span>`).join('')}</div>
+    <div class="tablewrap"><table><thead><tr><th><input type="checkbox" id="ofAll" checked aria-label="Select all"></th><th>Store</th><th>Store #</th><th>Level</th><th>Order</th><th>Language</th><th>Renewal date</th><th>Why</th><th></th></tr></thead><tbody>
+      ${OF.items.map(i => `<tr><td><input type="checkbox" data-sel="${i.id}" checked aria-label="Include"></td>
+        <td><b>${esc(i.shop_name)}</b><div class="sub">${esc([i.city, provAbbr(i.province)].filter(Boolean).join(', '))}</div></td><td>${esc(i.icar_id)}</td>
+        <td>${i.aluminum ? 'Aluminum' : 'Gold Class'}</td>
+        <td><select data-kind="${i.id}" style="width:auto;min-height:34px;padding:4px 8px"><option value="plaque" ${i.kind === 'plaque' ? 'selected' : ''}>Plaque</option><option value="plate" ${i.kind === 'plate' ? 'selected' : ''}>Year plate</option></select></td>
+        <td><select data-lang="${i.id}" style="width:auto;min-height:34px;padding:4px 8px"><option value="en" ${i.language === 'en' ? 'selected' : ''}>English</option><option value="fr" ${i.language === 'fr' ? 'selected' : ''}>French</option></select></td>
+        <td class="nowrap">${esc(fmtShort(i.renewal_date))}</td><td class="small">${esc(i.reason || '')}</td>
+        <td><button class="btn sm ghost" data-rm="${i.id}" title="Remove from this order">Remove</button></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="row" style="margin-top:16px;align-items:flex-end;gap:10px">
+      <div style="flex:0 1 320px"><label class="f" for="ofLabel">Order name</label><input id="ofLabel" type="text" value="Plaque Order ${esc(monthLabel())}"></div>
+      <button class="btn" id="ofBuild" style="flex:0 0 auto">Download order files (.zip)</button>
+      <button class="btn secondary" id="ofSent" style="flex:0 0 auto">Mark as sent to St. Joseph</button>
+    </div>
+    <p class="help">The zip has the <b>Mail Merge Document</b> (one sheet per type, as before), the <b>Plaque Order Gold</b> sheet for St. Joseph, and the merged letters as one PDF per type (e.g. <i>GC Plaque Letter ENG</i>), signed by ${esc(CONTENT?.settings?.signatory_name || 'the signatory')}. The renewal date is worked out from the expiry date (expiry minus one year); check it before sending.</p>`
+    : '<div class="alert ok" style="margin-top:14px">Nothing waiting to be ordered. Plaques and year plates are queued automatically when the monthly list is uploaded, or from a store’s Notify window.</div>'}
+  </div>
+  <div class="panel"><h3>Past orders</h3>${orders?.length ? `<div class="tablewrap"><table><thead><tr><th>Sent</th><th>Order</th><th>Items</th><th>By</th><th></th></tr></thead><tbody>
+    ${orders.map(o => `<tr><td class="nowrap">${esc(fmtDateTime(o.created_at))}</td><td>${esc(o.label)}</td><td>${o.item_count}</td><td>${esc(o.staff?.full_name || o.staff?.email || '')}</td>
+      <td><button class="btn sm secondary" data-again="${o.id}" data-label="${esc(o.label)}">Download files again</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No orders sent yet.</p>'}</div>`;
+  const chosen = () => OF.items.filter(i => OF.sel.has(i.id));
+  $('#ofAll') && ($('#ofAll').onchange = e => { $$('[data-sel]').forEach(c => { c.checked = e.target.checked; }); OF.sel = new Set(e.target.checked ? OF.items.map(i => i.id) : []); });
+  $$('[data-sel]').forEach(c => c.onchange = () => { const id = +c.dataset.sel; c.checked ? OF.sel.add(id) : OF.sel.delete(id); });
+  const upd = async (id, args) => { const { error: e } = await sb.rpc('update_plaque_item', { p_id: id, ...args }); if (e) return toast(e.message, 'err'); const it = OF.items.find(i => i.id === id); if (args.p_kind) it.kind = args.p_kind; if (args.p_language) it.language = args.p_language; };
+  $$('[data-kind]').forEach(s => s.onchange = () => upd(+s.dataset.kind, { p_kind: s.value }));
+  $$('[data-lang]').forEach(s => s.onchange = () => upd(+s.dataset.lang, { p_language: s.value }));
+  $$('[data-rm]').forEach(b => b.onclick = async () => { const { error: e } = await sb.rpc('update_plaque_item', { p_id: +b.dataset.rm, p_remove: true }); if (e) return toast(e.message, 'err'); toast('Removed from the order'); viewOrders(); });
+  $('#ofBuild') && ($('#ofBuild').onclick = async e => {
+    const list = chosen(); if (!list.length) return toast('Select at least one store', 'err');
+    const b = e.currentTarget; busy(b, true, 'Building…');
+    try { await downloadOrderZip(list, $('#ofLabel').value.trim() || 'Plaque Order'); } catch (err) { console.error(err); toast(err.message, 'err'); } finally { busy(b, false); }
+  });
+  $('#ofSent') && ($('#ofSent').onclick = async e => {
+    const list = chosen(); if (!list.length) return toast('Select at least one store', 'err');
+    const b = e.currentTarget;
+    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = `Click again: mark ${list.length} as sent`; return; }
+    busy(b, true, 'Saving…');
+    const { data, error: me } = await sb.rpc('mark_plaque_order', { p_item_ids: list.map(i => i.id), p_label: $('#ofLabel').value.trim() });
+    if (me) { busy(b, false); return toast(me.message, 'err'); }
+    toast(`${data.items} items marked as sent to St. Joseph`); viewOrders();
+  });
+  $$('[data-again]').forEach(b => b.onclick = async () => {
+    busy(b, true, 'Building…');
+    try { const { data, error: ie } = await sb.from('plaque_items').select('*').eq('order_id', b.dataset.again).order('shop_name'); if (ie) throw ie; await downloadOrderZip(data, b.dataset.label); }
+    catch (err) { toast(err.message, 'err'); } finally { busy(b, false); }
+  });
+}
+
+/* Builds the same files the team used to make by hand: Mail Merge Document.xlsx, Plaque Order Gold.xlsx and the merged letters */
+async function downloadOrderZip(items, label) {
+  await Promise.all([loadScript(XLSX_SRC), loadScript(JSZIP_SRC)]);
+  const content = await loadContent(true);
+  const zip = new JSZip(), folder = zip.folder(label.replace(/[\\/:*?"<>|]/g, '').trim() || 'Plaque Order');
+  const byCat = c => items.filter(i => catOf(i) === c).sort((a, b) => a.shop_name.localeCompare(b.shop_name));
+  const totalRow = (n, width) => { const r = Array(width).fill(''); r[0] = `Total ${n}`; return r; };
+
+  // 1. Mail Merge Document.xlsx: one sheet per type, same columns as before
+  const mm = XLSX.utils.book_new();
+  const MM_HEAD = ['SHOP NAME', 'STATUS', 'RENEWAL DATE', 'SHOP NAME (as seen in our system)', 'SHOP ADDRESS', 'CITY', 'PROVINCE', 'POSTAL CODE', 'NOTES'];
+  for (const c of ORDER_CATS) {
+    const rows = byCat(c).map(i => [i.shop_name, c.code, new Date(i.renewal_date + 'T00:00:00'), i.raw_name || i.shop_name, i.address || '', i.city || '', provAbbr(i.province), i.postal_code || '', i.reason || '']);
+    const ws = XLSX.utils.aoa_to_sheet([MM_HEAD, ...rows, ...(rows.length ? [totalRow(rows.length, MM_HEAD.length)] : [])], { cellDates: true, dateNF: 'd-mmm-yy' });
+    ws['!cols'] = [{ wch: 42 }, { wch: 16 }, { wch: 12 }, { wch: 52 }, { wch: 36 }, { wch: 18 }, { wch: 9 }, { wch: 12 }, { wch: 28 }];
+    XLSX.utils.book_append_sheet(mm, ws, c.code);
+  }
+  folder.file('Mail Merge Document.xlsx', XLSX.write(mm, { type: 'array', bookType: 'xlsx' }));
+
+  // 2. Plaque Order Gold.xlsx: what St. Joseph engraves (plaques only, as before)
+  const po = XLSX.utils.book_new(), PO_HEAD = ['SHOP NAME', 'SHOP ADDRESS', 'CITY', 'PROVINCE', 'POSTAL CODE'];
+  for (const [name, alu, lang] of [['GC English', false, 'en'], ['GC French', false, 'fr'], ['GC Aluminum English', true, 'en'], ['GC Aluminum French', true, 'fr']]) {
+    const rows = items.filter(i => i.kind === 'plaque' && !!i.aluminum === alu && i.language === lang).sort((a, b) => a.shop_name.localeCompare(b.shop_name))
+      .map(i => [i.shop_name, i.address || '', i.city || '', provAbbr(i.province), i.postal_code || '']);
+    const ws = XLSX.utils.aoa_to_sheet([PO_HEAD, ...rows, ...(rows.length ? [totalRow(rows.length, PO_HEAD.length)] : [])]);
+    ws['!cols'] = [{ wch: 42 }, { wch: 36 }, { wch: 18 }, { wch: 9 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(po, ws, name);
+  }
+  folder.file('Plaque Order Gold.xlsx', XLSX.write(po, { type: 'array', bookType: 'xlsx' }));
+
+  // 3. Merged letters: one PDF per type, one letter per page (no certificate, no reference number)
+  const { jsPDF } = window.jspdf, today = new Date().toISOString();
+  for (const c of ORDER_CATS) {
+    const list = byCat(c); if (!list.length) continue;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
+    for (let k = 0; k < list.length; k++) {
+      const i = list[k];
+      await buildLetterPdf({ language: c.lang, aluminum: c.alu, name: i.shop_name, icar_id: i.icar_id, address: i.address, city: i.city,
+        province: provAbbr(i.province), postal_code: i.postal_code, issued_at: today }, content, { certificate: false, doc, append: k > 0 });
+    }
+    folder.file(`${c.code.replace(/^GC /, 'GC ').replace(/ (Plaque|Plate) /, ' $1 Letter ')}.pdf`, doc.output('arraybuffer'));
+  }
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${label.replace(/[\\/:*?"<>|]/g, '')}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast(`Order files ready: ${items.length} stores`);
 }
 
 /* ---------- Letters issued ---------- */

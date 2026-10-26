@@ -22,12 +22,18 @@ Stores whose Gold Class has expired are told so and asked to contact collisiontr
 ## For Tanja's team (`#/admin`)
 
 - **Overview**: stores on the list (and how many are Aluminum), new or renewed since the last upload, not yet contacted, certificates issued, expired.
-- **Gold Class list**: upload the monthly *ICAR – Active Gold Stores* Excel file unchanged. The app:
+- **Gold Class list**: upload the monthly *ICAR – Active Gold Stores* Excel file unchanged. The upload **never wipes the database**: it is checked against the stores already on file to see who is on and who is off the list. The app:
   - reads the **Current** sheet and recognises its columns (Gold Class, Number, Name, Phone, Address, City, Province, Postal Code, Expiration) automatically;
   - removes anything in brackets from shop names, except **(CarrXpert)**, which stays on; *(CarrXpert NA)* is removed. Every change is listed before you confirm;
   - marks *Gold Class – Aluminum* stores, which get the Aluminum certificate and letter;
-  - keeps each store's expiry date and blocks downloads once it has passed;
-  - after the upload, shows how many stores are **new**, **renewed** (later expiry date) and **no longer on the list**, with a button to notify the new and renewed ones.
+  - brings in each store's latest expiry date; expiry is always checked against the database, and downloads stop once it has passed;
+  - marks stores that are missing from the file as **off the list**. They stay on file with their history, can't download, and come back automatically if a later list includes them;
+  - after the upload, shows how many stores are **new**, **renewed**, **back on the list**, **changed level** and **went off the list**, with buttons to notify them and to build the St. Joseph order.
+- **St. Joseph orders**: each upload queues a **plaque** for every new store or change of level (Gold Class ↔ Aluminum) and a **year plate** for every renewal. Quebec stores get French. The team can change plaque/plate or language, remove a line, or add a store by hand from its Notify window. **Download order files** builds a zip with the same files the team used to make by hand:
+  - *Mail Merge Document.xlsx*: one sheet per type (GC / GCA × Plaque / Plate × ENG / FR) with shop name, status, renewal date, system name, address, city, province, postal code;
+  - *Plaque Order Gold.xlsx*: the plaques for St. Joseph to engrave (GC English/French, GC Aluminum English/French);
+  - the merged letters as one PDF per type (e.g. *GC Plate Letter ENG.pdf*), one letter per page, signed by Scott Sinclair.
+  Then **Mark as sent to St. Joseph** files the order under *Past orders*, where it can be downloaded again. The renewal date is the expiry date minus one year, because the export has no payment date.
 - **Notify customers**: filter by *New or renewed*, *Not contacted*, *Contacted*, *Certificate issued* or *Expired*. **Notify** opens the store's personal link, a ready-to-send email (English or French) and a phone script. Log each email or call. **Download list** exports the stores shown, with phone numbers and personal links.
 - **Issue it now** (in any store's Notify window): **Email it with attachment** creates an Outlook email (`.eml`) with the certificate and letter attached; **Download only** saves the PDF.
 - **Edit details** (any store): correct the name printed on the certificate. A corrected name is **remembered on every future upload**. Expiry date and Aluminum can also be changed until the next upload.
@@ -62,6 +68,7 @@ supabase/seed.sql                         original letter wording and sign-off
 supabase/migrations/002_customer_notifications.sql   outreach tracking, notification email
 supabase/migrations/003_recognition_certificates.sql  Aluminum flag, certificate wording
 supabase/migrations/004_manual_entries_and_staff_issue.sql  add stores by hand; staff-issued certificates
+supabase/migrations/006_reconcile_list_and_plaque_orders.sql  monthly list checks on/off instead of replacing; St. Joseph orders
 supabase/migrations/005_gold_class_system_export.sql  Gold Class only: system export, store number + postal code,
                                           expiry, new/renewed, name corrections, official letters, Scott Sinclair
 supabase/functions/manage-staff/          team management (create users, reset passwords, deactivate)
@@ -78,4 +85,4 @@ samples/SAMPLE-Active-Gold-Stores.xlsx    made-up stores in the system export fo
 
 ## Rebuilding the back end
 
-In an empty Supabase project, run `001_schema.sql`, `seed.sql`, then migrations `002` to `005` in order. Deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
+In an empty Supabase project, run `001_schema.sql`, `seed.sql`, then migrations `002` to `006` in order. Deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
