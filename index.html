@@ -768,7 +768,7 @@ function openCustomerForm(rec = null) {
 }
 
 /* ---------- Notify customers ---------- */
-const NF = { q: '', status: 'not_contacted', page: 0, size: 50 };
+const NF = { q: '', status: 'not_contacted', exp: '', page: 0, size: 50 };
 const PHONE_SCRIPT = {
   en: `Hi, this is {{sender}} from I-CAR Canada. I'm calling about {{name}}'s I-CAR Gold Class recognition.
 
@@ -804,13 +804,15 @@ async function viewNotify() {
         <button class="btn" id="nfAdd" style="flex:0 0 auto">+ Add a store</button>
       </div>
       <div class="filters">
-        <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, store number, city, contact, email or phone" value="${esc(NF.q)}"></div>
+        <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, store number, city, phone or expiry date (e.g. Oct 31)" value="${esc(NF.q)}"></div>
+        <div><label class="f" for="nf_exp">Expires</label><select id="nf_exp" style="width:auto"><option value="">Any month</option></select></div>
         <div><button class="btn secondary" id="nf_x" title="Spreadsheet of the stores shown, with contact details and personal links">Download list</button></div>
       </div>
       <div class="chips" id="nfChips"></div>
       <div id="nfRes" style="margin-top:14px"><div class="center" style="min-height:160px"><span class="spinner" style="color:#006cb4"></span></div></div>
     </div>`;
   let timer; $('#nf_q').oninput = () => { clearTimeout(timer); timer = setTimeout(() => { NF.q = $('#nf_q').value; NF.page = 0; loadNotify(); }, 300); };
+  $('#nf_exp').onchange = e => { NF.exp = e.target.value; NF.page = 0; loadNotify(); };
   $('#nf_x').onclick = exportMailMerge;
   $('#nfAdd').onclick = () => openCustomerForm();
   loadNotify();
@@ -818,10 +820,12 @@ async function viewNotify() {
 let NROWS = [];
 const NF_CHIPS = [['new', 'New or renewed'], ['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no certificate yet'], ['downloaded', 'Certificate issued'], ['expired', 'Expired'], ['off', 'Off the list'], ['all', 'All on the list']];
 async function loadNotify() {
-  const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: NF.size, p_offset: NF.page * NF.size });
+  const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: NF.size, p_offset: NF.page * NF.size, p_expires: NF.exp || null });
   const res = $('#nfRes'); if (!res) return;
   if (error) return res.innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
   const s = data.summary || {};
+  const sel = $('#nf_exp');
+  if (sel) sel.innerHTML = '<option value="">Any month</option>' + (data.months || []).map(x => `<option value="${x.m}" ${NF.exp === x.m ? 'selected' : ''}>${esc(parseDate(x.m + '-15').toLocaleDateString('en-CA', { month: 'long', year: 'numeric' }))} (${x.n})</option>`).join('');
   $('#nfChips').innerHTML = NF_CHIPS.filter(([k]) => k === NF.status || k === 'all' || !['new', 'expired', 'off'].includes(k) || s[k])
     .map(([k, l]) => `<button class="chip ${NF.status === k ? 'on' : ''}" data-ns="${k}">${l}<span class="c">${(s[k === 'all' ? 'total' : k] || 0).toLocaleString()}</span></button>`).join('');
   $$('[data-ns]').forEach(b => b.onclick = () => { NF.status = b.dataset.ns; NF.page = 0; loadNotify(); });
@@ -1043,7 +1047,7 @@ async function exportMailMerge(e) {
   const btn = e.currentTarget; busy(btn, true, 'Exporting…');
   try {
     const all = [];
-    for (let i = 0; i < 40; i++) { const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: 500, p_offset: i * 500 }); if (error) throw error; all.push(...data.rows); if (data.rows.length < 500) break; }
+    for (let i = 0; i < 40; i++) { const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: 500, p_offset: i * 500, p_expires: NF.exp || null }); if (error) throw error; all.push(...data.rows); if (data.rows.length < 500) break; }
     csvDownload(all, [['icar_id', 'Store number'], ['display_name', 'Name on certificate'], ['raw_name', 'Name in I-CAR system'], ['aluminum', 'Aluminum', r => r.aluminum ? 'Yes' : ''],
       ['expires_on', 'Expires'], ['contact_name', 'Contact name'], ['contact_email', 'Email'], ['contact_phone', 'Phone'], ['address', 'Address'], ['city', 'City'], ['province', 'Province'], ['postal_code', 'Postal code'],
       ['link_en', 'Personal link (EN)', r => personalLink(r.icar_id, 'en')], ['link_fr', 'Personal link (FR)', r => personalLink(r.icar_id, 'fr')],
