@@ -595,7 +595,7 @@ function renderReady() {
 const ADM = { session: null, staff: null, tab: 'overview' };
 const TABS = [['overview', 'Overview'], ['notify', 'Notify customers'], ['lists', 'Recognition lists'], ['letters', 'Letters issued'], ['design', 'Letter & email wording'], ['team', 'Team']];
 
-function authCard(inner) { return `${siteHead('', 'Recognition letters · Staff')}<main class="pub" style="max-width:460px"><div class="panel">${inner}</div></main>`; }
+function authCard(inner) { return `${siteHead('', 'Recognition certificates · Staff')}<main class="pub" style="max-width:460px"><div class="panel">${inner}</div></main>`; }
 
 async function renderAdmin() {
   document.documentElement.lang = 'en';
@@ -691,7 +691,7 @@ function renderAdminShell() {
   const s = ADM.staff, isAdmin = s.role === 'admin';
   const tabs = TABS.filter(([k]) => k !== 'team' || isAdmin);
   if (!tabs.some(([k]) => k === ADM.tab)) ADM.tab = 'overview';
-  app.innerHTML = `${siteHead(`<div class="whoami"><span class="name">${esc(s.full_name || s.email)}${isAdmin ? ' · Admin' : ''}</span><button class="btn sm secondary" id="pwBtn">Password</button><button class="btn sm secondary" id="outBtn">Sign out</button></div>`, 'Recognition letters · Staff')}
+  app.innerHTML = `${siteHead(`<div class="whoami"><span class="name">${esc(s.full_name || s.email)}${isAdmin ? ' · Admin' : ''}</span><button class="btn sm secondary" id="pwBtn">Password</button><button class="btn sm secondary" id="outBtn">Sign out</button></div>`, 'Recognition certificates · Staff')}
     <nav class="tabs"><div class="in">${tabs.map(([k, l]) => `<button data-tab="${k}" class="${ADM.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div></nav>
     <main class="adm" id="view"></main>`;
   $('#outBtn').onclick = signOut;
@@ -721,11 +721,76 @@ async function viewOverview() {
       <div class="stat"><div class="n">${(st.letters_total || 0).toLocaleString()}</div><div class="l">Letters downloaded (all time)</div></div>
       <div class="stat"><div class="n">${(st.letters_30d || 0).toLocaleString()}</div><div class="l">Letters in the last 30 days</div></div>
     </div>
+    <div class="panel spread" style="margin-bottom:var(--space-md)"><div><h3 style="margin:0">Issue a certificate quickly</h3><p class="small muted" style="margin:2px 0 0">Add one shop or technician by hand, then download their certificate and letter or send them their link.</p></div>
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn" data-add="gold_class" style="flex:0 0 auto">+ Gold Class shop</button><button class="btn" data-add="platinum" style="flex:0 0 auto">+ Platinum technician</button></div></div>
     ${st.not_contacted ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${st.not_contacted.toLocaleString()}</b> recognized customers haven’t been told about their letter yet.</span><button class="btn sm" data-go="notify">Notify customers</button></div>` : ''}
     <div class="grid2">${listCard('gold_class')}${listCard('platinum')}</div>
     <div class="panel"><div class="spread"><h3 style="margin:0">Latest letters</h3><button class="btn sm secondary" data-go="letters">View all</button></div>
       ${recent?.length ? `<div class="tablewrap" style="margin-top:14px">${lettersTable(recent, false)}</div>` : '<p class="muted" style="margin:12px 0 0">No letters have been downloaded yet.</p>'}</div>`;
   $$('[data-go]').forEach(b => b.onclick = () => goTab(b.dataset.go));
+  $$('[data-add]').forEach(b => b.onclick = () => openCustomerForm(b.dataset.add));
+}
+
+/* ---------- Add or edit one customer by hand ---------- */
+const PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'];
+function openCustomerForm(program, rec = null) {
+  const gold = program === 'gold_class', r = rec || {};
+  const last = r.last_name || (!gold && r.display_name ? r.display_name.split(/\s+/).pop() : '');
+  const first = !gold && r.display_name ? r.display_name.slice(0, r.display_name.length - last.length).trim() : '';
+  const roleOpts = ROLES.map(x => x[1]);
+  const curRole = r.role ? (ROLES.find(([rx]) => rx.test(r.role))?.[1] || r.role) : '';
+  openModal(`
+    <button class="btn ghost x" id="cfClose" aria-label="Close">✕</button>
+    <div>${progBadge(program)}</div><h2 style="margin:6px 0 4px">${rec ? 'Edit' : 'Add'} ${gold ? 'a Gold Class shop' : 'a Platinum technician'}</h2>
+    <p class="small muted" style="margin:0 0 14px">${rec ? 'Changes apply to certificates issued from now on.' : 'For someone who isn’t on the uploaded list yet. If a later upload includes the same I-CAR ID, the list version takes over.'}</p>
+    <form id="cfForm">
+      ${gold ? `
+      <div class="row"><div><label class="f" for="cf_name">Business name <span class="req">*</span></label><input id="cf_name" type="text" value="${esc(r.display_name)}" required></div>
+        <div style="flex:0 1 200px"><label class="f" for="cf_id">I-CAR ID <span class="req">*</span></label><input id="cf_id" type="text" value="${esc(r.icar_id)}" required></div></div>
+      <div style="margin-top:12px"><label class="f" for="cf_addr">Street address</label><input id="cf_addr" type="text" value="${esc(r.address)}"></div>
+      <div class="row" style="margin-top:12px"><div><label class="f" for="cf_city">City</label><input id="cf_city" type="text" value="${esc(r.city)}"></div>
+        <div style="flex:0 1 120px"><label class="f" for="cf_prov">Province</label><select id="cf_prov"><option value=""></option>${PROVINCES.map(x => `<option ${r.province === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+        <div style="flex:0 1 160px"><label class="f" for="cf_postal">Postal code <span class="req">*</span></label><input id="cf_postal" type="text" value="${esc(r.postal_code)}" required></div></div>
+      <label class="check" style="margin-top:14px"><input type="checkbox" id="cf_alu" ${r.aluminum ? 'checked' : ''}><span><b>Gold Class – Aluminum</b> shop (gets the Aluminum certificate)</span></label>
+      <h3 class="section-head" style="margin:20px 0 8px">Contact</h3>
+      <div class="row"><div><label class="f" for="cf_cname">Contact name</label><input id="cf_cname" type="text" value="${esc(r.contact_name)}"></div>
+        <div><label class="f" for="cf_email">Email</label><input id="cf_email" type="email" value="${esc(r.contact_email)}"></div>
+        <div style="flex:0 1 180px"><label class="f" for="cf_phone">Phone</label><input id="cf_phone" type="tel" value="${esc(r.contact_phone)}"></div></div>`
+      : `
+      <div class="row"><div><label class="f" for="cf_first">First name <span class="req">*</span></label><input id="cf_first" type="text" value="${esc(first)}" required></div>
+        <div><label class="f" for="cf_last">Last name <span class="req">*</span></label><input id="cf_last" type="text" value="${esc(last)}" required></div>
+        <div style="flex:0 1 180px"><label class="f" for="cf_id">I-CAR ID <span class="req">*</span></label><input id="cf_id" type="text" value="${esc(r.icar_id)}" required></div></div>
+      <div class="row" style="margin-top:12px"><div><label class="f" for="cf_role">Role (shown on the certificate)</label><select id="cf_role"><option value="">—</option>${roleOpts.map(x => `<option ${curRole === x ? 'selected' : ''}>${x}</option>`).join('')}${curRole && !roleOpts.includes(curRole) ? `<option selected>${esc(curRole)}</option>` : ''}</select></div>
+        <div><label class="f" for="cf_shop">Business / employer</label><input id="cf_shop" type="text" value="${esc(r.shop_name)}"></div></div>
+      <h3 class="section-head" style="margin:20px 0 8px">Contact</h3>
+      <div class="row"><div><label class="f" for="cf_email">Email</label><input id="cf_email" type="email" value="${esc(r.contact_email)}"></div>
+        <div style="flex:0 1 200px"><label class="f" for="cf_phone">Phone</label><input id="cf_phone" type="tel" value="${esc(r.contact_phone)}"></div></div>`}
+      <div id="cfMsg" style="margin-top:14px"></div>
+      <div class="row" style="margin-top:6px;gap:10px">
+        <button class="btn" type="submit" id="cfIssue" data-next="issue" style="flex:0 0 auto">${rec ? 'Save' : 'Save and issue now'}</button>
+        ${rec ? '' : '<button class="btn secondary" type="submit" id="cfSave" data-next="notify" style="flex:0 0 auto">Save and send them their link</button>'}
+        <button class="btn ghost" type="button" id="cfCancel" style="flex:0 0 auto">Cancel</button>
+      </div>
+    </form>`, true);
+  $('#cfClose').onclick = $('#cfCancel').onclick = closeModal;
+  let next = rec ? 'notify' : 'issue';
+  $$('#cfForm button[type=submit]').forEach(b => b.onclick = () => { next = rec ? 'notify' : b.dataset.next; });
+  $('#cfForm').onsubmit = async e => {
+    e.preventDefault();
+    const v = id => ($('#' + id)?.value || '').trim();
+    const data = gold
+      ? { icar_id: v('cf_id'), name: v('cf_name'), address: v('cf_addr'), city: v('cf_city'), province: v('cf_prov'), postal_code: v('cf_postal'), aluminum: $('#cf_alu').checked,
+          contact_name: v('cf_cname'), contact_email: v('cf_email'), contact_phone: v('cf_phone') }
+      : { icar_id: v('cf_id'), name: [v('cf_first'), v('cf_last')].filter(Boolean).join(' '), last_name: v('cf_last'), role: v('cf_role'), shop_name: v('cf_shop'),
+          contact_name: [v('cf_first'), v('cf_last')].filter(Boolean).join(' '), contact_email: v('cf_email'), contact_phone: v('cf_phone') };
+    const btn = e.submitter || $('#cfIssue'); busy(btn, true, 'Saving…');
+    const { data: saved, error } = await sb.rpc('save_recognition', { p_program: program, p_data: data, p_id: rec?.id ?? null });
+    busy(btn, false);
+    if (error) return $('#cfMsg').innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
+    toast(rec ? 'Saved' : `${saved.display_name} added`);
+    if (ADM.tab === 'notify') { NF.program = program; loadNotify(); }
+    openNotify(saved, 'en', next === 'issue' ? { autoIssue: true } : {});
+  };
 }
 
 /* ---------- Notify customers ---------- */
@@ -763,7 +828,8 @@ async function viewNotify() {
     <div class="panel">
       <div class="spread" style="margin-bottom:16px">
         <div><h2 style="margin:0">Notify customers</h2><p class="muted" style="margin:4px 0 0">Email or phone each recognized customer with their personal link, then log it here.</p></div>
-        <div class="seg" role="group" aria-label="Recognition"><button data-np="gold_class" class="${NF.program === 'gold_class' ? 'on' : ''}">Gold Class</button><button data-np="platinum" class="${NF.program === 'platinum' ? 'on' : ''}">Platinum</button></div>
+        <div class="row" style="flex:0 0 auto;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Recognition"><button data-np="gold_class" class="${NF.program === 'gold_class' ? 'on' : ''}">Gold Class</button><button data-np="platinum" class="${NF.program === 'platinum' ? 'on' : ''}">Platinum</button></div>
+          <button class="btn" id="nfAdd">+ Add ${NF.program === 'gold_class' ? 'shop' : 'technician'}</button></div>
       </div>
       <div class="filters">
         <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, I-CAR ID, contact, email or city" value="${esc(NF.q)}"></div>
@@ -775,6 +841,7 @@ async function viewNotify() {
   $$('[data-np]').forEach(b => b.onclick = () => { NF.program = b.dataset.np; NF.page = 0; viewNotify(); });
   let timer; $('#nf_q').oninput = () => { clearTimeout(timer); timer = setTimeout(() => { NF.q = $('#nf_q').value; NF.page = 0; loadNotify(); }, 300); };
   $('#nf_x').onclick = exportMailMerge;
+  $('#nfAdd').onclick = () => openCustomerForm(NF.program);
   loadNotify();
 }
 let NROWS = [];
@@ -787,13 +854,13 @@ async function loadNotify() {
     .map(([k, l]) => `<button class="chip ${NF.status === k ? 'on' : ''}" data-ns="${k}">${l}<span class="c">${(s[k === 'all' ? 'total' : k] || 0).toLocaleString()}</span></button>`).join('');
   $$('[data-ns]').forEach(b => b.onclick = () => { NF.status = b.dataset.ns; NF.page = 0; loadNotify(); });
   NROWS = data.rows || [];
-  if (!s.total) return res.innerHTML = `<div class="alert warn">No ${PROGRAM[NF.program].en} list has been uploaded yet. <a href="#" id="toLists">Upload one</a> to start notifying customers.</div>`, $('#toLists').onclick = e => { e.preventDefault(); goTab('lists'); };
+  if (!s.total) return res.innerHTML = `<div class="alert warn">Nobody is on the ${PROGRAM[NF.program].en} list yet. <a href="#" id="toLists">Upload the list</a>, or use <b>+ Add</b> to add someone by hand.</div>`, $('#toLists').onclick = e => { e.preventDefault(); goTab('lists'); };
   const pages = Math.max(1, Math.ceil((data.total || 0) / NF.size));
   const status = r => r.letters > 0 ? `<span class="badge ok">Letter downloaded</span><div class="sub">${esc(fmtShort(r.last_letter_at))}</div>`
     : r.last_contact_at ? `<span class="badge blue">${r.last_contact_method === 'phone' ? 'Phoned' : 'Emailed'}</span><div class="sub">${esc(fmtShort(r.last_contact_at))}${r.last_contact_by ? ' · ' + esc(r.last_contact_by) : ''}${r.contacts > 1 ? ` · ${r.contacts} contacts` : ''}</div>`
     : '<span class="badge warn">Not contacted</span>';
   res.innerHTML = NROWS.length ? `<div class="tablewrap"><table><thead><tr><th>${NF.program === 'gold_class' ? 'Business' : 'Individual'}</th><th>I-CAR ID</th><th>Contact on file</th><th>Status</th><th></th></tr></thead><tbody>
-    ${NROWS.map(r => `<tr><td><b>${esc(r.display_name)}</b>${r.aluminum ? ' <span class="badge">Aluminum</span>' : ''}<div class="sub">${esc(NF.program === 'gold_class' ? [r.city, r.province].filter(Boolean).join(', ') : [r.shop_name, roleLabel(r.role, 'en')].filter(Boolean).join(' · '))}</div></td>
+    ${NROWS.map(r => `<tr><td><b>${esc(r.display_name)}</b>${r.aluminum ? ' <span class="badge">Aluminum</span>' : ''}${r.source === 'manual' ? ' <span class="badge blue" title="Added by hand, not from the uploaded list">Added manually</span>' : ''}<div class="sub">${esc(NF.program === 'gold_class' ? [r.city, r.province].filter(Boolean).join(', ') : [r.shop_name, roleLabel(r.role, 'en')].filter(Boolean).join(' · '))}</div></td>
       <td class="nowrap">${esc(r.icar_id)}</td>
       <td>${r.contact_name ? esc(r.contact_name) + '<br>' : ''}${r.contact_email ? `<span class="sub">${esc(r.contact_email)}</span><br>` : ''}${r.contact_phone ? `<span class="sub">${esc(r.contact_phone)}</span>` : ''}${!r.contact_name && !r.contact_email && !r.contact_phone ? '<span class="sub">None</span>' : ''}</td>
       <td>${status(r)}</td><td class="nowrap"><button class="btn sm" data-notify="${r.id}">Notify</button></td></tr>`).join('')}
@@ -806,7 +873,7 @@ async function loadNotify() {
   $$('[data-notify]').forEach(b => b.onclick = () => openNotify(NROWS.find(r => String(r.id) === b.dataset.notify)));
 }
 
-async function openNotify(r, lang = 'en') {
+async function openNotify(r, lang = 'en', opts = {}) {
   const S = (await loadContent()).settings || {};
   const v = notifyVars(r, lang);
   const subj = fillMsg(lang === 'fr' ? S.notify_subject_fr : S.notify_subject_en, v);
@@ -818,7 +885,9 @@ async function openNotify(r, lang = 'en') {
       <div><div>${progBadge(r.program)}</div><h2 style="margin:6px 0 0">${esc(r.display_name)}</h2><div class="muted small">I-CAR ID ${esc(r.icar_id)}${r.contact_name ? ' · Contact: ' + esc(r.contact_name) : ''}</div></div>
       <div class="lang-toggle" role="group" aria-label="Message language"><button data-nl="en" class="${lang === 'en' ? 'on' : ''}">English</button><button data-nl="fr" class="${lang === 'fr' ? 'on' : ''}">Français</button></div>
     </div>
-    <label class="f" for="nLink">Their personal link</label>
+    <div class="refbox spread" style="margin-bottom:18px"><div><b>Issue it now</b><div class="small muted">Download their ${lang === 'fr' ? 'French' : 'English'} certificate and letter to email or print yourself. It’s logged under your name.</div></div>
+      <button class="btn" id="nIssue" style="flex:0 0 auto">Download certificate and letter</button></div>
+    <label class="f" for="nLink">Or send them their personal link</label>
     <div class="copyrow"><input id="nLink" type="text" readonly value="${esc(v.link)}"><button class="btn secondary" id="nCopyLink">Copy link</button></div>
     <div class="help">Opens the letter page with ${r.program === 'gold_class' ? 'their I-CAR ID filled in. They confirm with their postal code' : 'their I-CAR ID filled in. They confirm with their last name'}.</div>
     <div class="grid2" style="margin-top:20px">
@@ -838,9 +907,33 @@ async function openNotify(r, lang = 'en') {
         <button class="btn secondary block" id="nLogPhone" style="margin-top:10px">✓ Log phone call</button>
       </div>
     </div>
-    <h3 class="section-head" style="margin:24px 0 6px">History</h3><ul class="history" id="nHist"><li class="muted">Loading…</li></ul>`, true);
+    <h3 class="section-head" style="margin:24px 0 6px">History</h3><ul class="history" id="nHist"><li class="muted">Loading…</li></ul>
+    ${r.source === 'manual' ? `<div class="spread" style="margin-top:16px;border-top:1px solid var(--gray-25);padding-top:14px"><span class="small muted">Added by hand${r.added_at ? ' on ' + esc(fmtShort(r.added_at)) : ''}.</span>
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn sm secondary" id="nEdit">Edit details</button><button class="btn sm danger" id="nRemove">Remove</button></div></div>` : ''}`, true);
   $('#nClose').onclick = closeModal;
   $$('[data-nl]').forEach(b => b.onclick = () => openNotify(r, b.dataset.nl));
+  const issue = async btn => {
+    busy(btn, true, 'Preparing…');
+    try {
+      const { data, error } = await sb.rpc('staff_issue_letter', { p_recognition_id: r.id, p_language: lang });
+      if (error) throw error;
+      (await buildLetterPdf(data, await loadContent(true))).save(letterFilename(data));
+      toast(`Certificate and letter issued (${data.code})`);
+      if (ADM.tab === 'notify') loadNotify();
+      openNotify(r, lang);
+    } catch (err) { toast(err.message, 'err'); busy(btn, false); }
+  };
+  $('#nIssue').onclick = e => issue(e.currentTarget);
+  if (opts.autoIssue) issue($('#nIssue'));
+  $('#nEdit') && ($('#nEdit').onclick = () => openCustomerForm(r.program, r));
+  $('#nRemove') && ($('#nRemove').onclick = async e => {
+    const b = e.currentTarget;
+    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Click again to remove'; return; }
+    busy(b, true);
+    const { error } = await sb.rpc('delete_recognition', { p_id: r.id });
+    if (error) { busy(b, false); return toast(error.message, 'err'); }
+    toast(`${r.display_name} removed`); closeModal(); if (ADM.tab === 'notify') loadNotify();
+  });
   $('#nCopyLink').onclick = () => copyText(v.link, 'Link copied');
   $('#nCopyMail').onclick = () => copyText(`${$('#nSubj').value}\n\n${$('#nBody').value}`, 'Message copied');
   $('#nMail').onclick = () => { location.href = `mailto:${encodeURIComponent($('#nTo').value.trim())}?subject=${encodeURIComponent($('#nSubj').value)}&body=${encodeURIComponent($('#nBody').value)}`; };
@@ -856,10 +949,10 @@ async function openNotify(r, lang = 'en') {
   $('#nLogPhone').onclick = e => log('phone', e.currentTarget);
   const [{ data: contacts }, { data: letters }] = await Promise.all([
     sb.from('customer_contacts').select('method, contact_detail, note, contacted_at, staff:contacted_by(full_name,email)').eq('program', r.program).eq('icar_id_norm', r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, '')).order('contacted_at', { ascending: false }),
-    sb.from('letter_requests').select('created_at, requester_name, requester_email, language').eq('program', r.program).eq('icar_id_norm', r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, '')).order('created_at', { ascending: false })
+    sb.from('letter_requests').select('created_at, requester_name, requester_email, language, issued_by').eq('program', r.program).eq('icar_id_norm', r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, '')).order('created_at', { ascending: false })
   ]);
   const items = [...(contacts || []).map(c => ({ at: c.contacted_at, html: `<b>${c.method === 'phone' ? 'Phoned' : 'Emailed'}</b>${c.contact_detail ? ' ' + esc(c.contact_detail) : ''} by ${esc(c.staff?.full_name || c.staff?.email || 'staff')}${c.note ? ` — ${esc(c.note)}` : ''}` })),
-    ...(letters || []).map(l => ({ at: l.created_at, html: `<b>Letter downloaded</b> by ${esc(l.requester_name)} (${esc(l.requester_email)}), ${esc(l.language.toUpperCase())}` }))].sort((a, b) => new Date(b.at) - new Date(a.at));
+    ...(letters || []).map(l => ({ at: l.created_at, html: l.issued_by ? `<b>Certificate issued</b> by ${esc(l.requester_name)} (staff), ${esc(l.language.toUpperCase())}` : `<b>Certificate downloaded</b> by ${esc(l.requester_name)} (${esc(l.requester_email)}), ${esc(l.language.toUpperCase())}` }))].sort((a, b) => new Date(b.at) - new Date(a.at));
   const h = $('#nHist'); if (h) h.innerHTML = items.length ? items.map(i => `<li><span class="muted">${esc(fmtDateTime(i.at))}</span> · ${i.html}</li>`).join('') : '<li class="muted">No contact or letters yet.</li>';
 }
 
@@ -906,18 +999,23 @@ const FIELDS = {
 let UPLOAD = null;
 async function viewLists() {
   loading();
-  const [{ data: st }, { data: hist }] = await Promise.all([sb.rpc('get_dashboard_stats'),
-    sb.from('list_uploads').select('id, program, filename, row_count, uploaded_at, is_active, staff:uploaded_by(full_name,email)').order('uploaded_at', { ascending: false }).limit(20)]);
+  const [{ data: st }, { data: hist }, { count: mGold }, { count: mPlat }] = await Promise.all([sb.rpc('get_dashboard_stats'),
+    sb.from('list_uploads').select('id, program, filename, row_count, uploaded_at, is_active, staff:uploaded_by(full_name,email)').order('uploaded_at', { ascending: false }).limit(20),
+    sb.from('recognitions').select('id', { count: 'exact', head: true }).eq('program', 'gold_class').eq('source', 'manual'),
+    sb.from('recognitions').select('id', { count: 'exact', head: true }).eq('program', 'platinum').eq('source', 'manual')]);
+  const manual = { gold_class: mGold || 0, platinum: mPlat || 0 };
   const cur = p => (st?.lists || []).find(l => l.program === p);
   const card = p => { const l = cur(p); return `<div class="panel"><h2 style="font-size:24px">${progBadge(p)} list</h2>
     ${l ? `<p style="margin:0"><b>${l.row_count.toLocaleString()}</b> records · ${esc(l.filename || '')}<br><span class="small muted">Uploaded ${esc(fmtDateTime(l.uploaded_at))}</span></p>` : '<div class="alert warn">No list uploaded yet.</div>'}
-    <p class="small muted" style="margin:12px 0">Upload the latest export from the I-CAR system (Excel or CSV). It <b>replaces</b> the current ${PROGRAM[p].en} list. Letters already issued and the contact history are kept. Include email and phone columns if you have them, for notifying customers.</p>
-    <label class="btn secondary">Choose file…<input type="file" accept=".csv,.xlsx,.xls,.txt" data-prog="${p}" hidden></label></div>`; };
+    ${manual[p] ? `<p style="margin:8px 0 0"><b>${manual[p].toLocaleString()}</b> added manually</p>` : ''}
+    <p class="small muted" style="margin:12px 0">Upload the latest export from the I-CAR system (Excel or CSV). It <b>replaces</b> the uploaded ${PROGRAM[p].en} list. People added manually are kept, unless the new list includes their I-CAR ID. Letters and contact history are always kept. Include email and phone columns if you have them.</p>
+    <div class="row" style="gap:8px"><label class="btn secondary" style="flex:0 0 auto">Choose file…<input type="file" accept=".csv,.xlsx,.xls,.txt" data-prog="${p}" hidden></label><button class="btn ghost" data-add="${p}" style="flex:0 0 auto">+ Add one ${p === 'gold_class' ? 'shop' : 'technician'}</button></div></div>`; };
   view().innerHTML = `<div id="uploadArea"></div><div class="grid2">${card('gold_class')}${card('platinum')}</div>
     <div class="panel"><h3>Upload history</h3>${hist?.length ? `<div class="tablewrap"><table><thead><tr><th>Uploaded</th><th>List</th><th>File</th><th>Records</th><th>By</th><th>Status</th></tr></thead><tbody>
       ${hist.map(h => `<tr><td class="nowrap">${esc(fmtDateTime(h.uploaded_at))}</td><td>${progBadge(h.program)}</td><td>${esc(h.filename)}</td><td>${h.row_count.toLocaleString()}</td><td>${esc(h.staff?.full_name || h.staff?.email || '')}</td><td>${h.is_active ? '<span class="badge ok">Current</span>' : '<span class="badge">Replaced</span>'}</td></tr>`).join('')}
     </tbody></table></div>` : '<p class="muted">No uploads yet.</p>'}</div>`;
   $$('input[type=file][data-prog]').forEach(inp => inp.onchange = () => inp.files[0] && startUpload(inp.dataset.prog, inp.files[0]));
+  $$('[data-add]').forEach(b => b.onclick = () => openCustomerForm(b.dataset.add));
 }
 function excelDateToISO(v) {
   if (v === '' || v == null) return '';
@@ -989,7 +1087,7 @@ function renderMapping() {
     busy(e.currentTarget, true, 'Uploading…');
     const { data, error } = await sb.rpc('replace_recognition_list', { p_program: P, p_filename: U.file, p_rows: valid });
     if (error) { busy(e.currentTarget, false); return toast(error.message, 'err'); }
-    toast(`${PROGRAM[P].en} list updated: ${data.inserted.toLocaleString()} records`);
+    toast(`${PROGRAM[P].en} list updated: ${data.inserted.toLocaleString()} records${data.merged_manual ? ` (${data.merged_manual} manual ${data.merged_manual === 1 ? 'entry' : 'entries'} now on the list)` : ''}`);
     UPLOAD = null; viewLists();
   };
 }
@@ -1009,7 +1107,7 @@ function lettersQuery(sel = '*', opts = {}) {
 function lettersTable(rows, actions = true) {
   return `<table><thead><tr><th>Downloaded</th><th>Letter for</th><th>I-CAR ID</th><th>Requested by</th><th>Email opt-in</th><th>Lang.</th><th>Reference</th>${actions ? '<th></th>' : ''}</tr></thead><tbody>
     ${rows.map(r => `<tr><td class="nowrap">${esc(fmtDateTime(r.created_at))}</td><td>${progBadge(r.program)}<div>${esc(r.recipient_name)}</div></td><td>${esc(r.icar_id)}</td>
-      <td>${esc(r.requester_name)}<div class="sub"><a href="mailto:${esc(r.requester_email)}">${esc(r.requester_email)}</a></div></td>
+      <td>${r.issued_by ? `${esc(r.requester_name)} <span class="badge blue">Staff</span>` : `${esc(r.requester_name)}<div class="sub"><a href="mailto:${esc(r.requester_email)}">${esc(r.requester_email)}</a></div>`}</td>
       <td>${r.marketing_consent ? '<span class="badge ok">Yes</span>' : '<span class="badge">No</span>'}</td><td>${esc(r.language.toUpperCase())}</td>
       <td class="mono nowrap">${esc(r.verification_code)}</td>${actions ? `<td><button class="btn sm secondary" data-pdf="${r.id}" title="Certificate and letter">PDF</button></td>` : ''}</tr>`).join('')}
   </tbody></table>`;

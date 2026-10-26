@@ -24,6 +24,8 @@ Ten failed attempts on one I-CAR ID lock it for an hour. Each letter carries a r
 
 - **Overview**: who hasn't been contacted yet, who has, and how many letters have been downloaded.
 - **Notify customers**: pick Gold Class or Platinum and filter by *Not contacted*, *Contacted, no letter yet* or *Letter downloaded*. **Notify** opens the customer's personal link, a ready-to-send email (English or French) and a phone script. **Open in email app** starts the email in Outlook. Then **Log email sent** or **Log phone call**, with an optional note, and the full history for that customer is shown. **Download list** downloads the customers shown as a spreadsheet, with contact details and personal links (EN and FR).
+- **Add one by hand** (Overview, Notify customers or Recognition lists): add a single Gold Class shop or Platinum technician without uploading a list. **Save and issue now** downloads their certificate and letter straight away, logged under your name. **Save and send them their link** opens the email and phone options. Manually added people are tagged in the list and can be edited or removed. If a later upload includes the same I-CAR ID, the list version takes over.
+- **Issue it now** (in any customer's Notify window): download their certificate and letter in English or French to email or print yourself.
 - **Recognition lists**: upload the latest Excel or CSV export from the I-CAR system. Columns are auto-matched, with a preview. Include email and phone columns to make notifying easier. A new upload replaces the list; letters and the contact history are kept.
 - **Letters issued**: search, filter, export to CSV, or re-download any letter.
 - **Letter & email wording**: edit the letter text and the notification email (English and French), the signatory, the signature image and the customer contact email.
@@ -65,6 +67,7 @@ supabase/migrations/001_schema.sql        tables, security rules, letter functio
 supabase/seed.sql                         default letter wording and sign-off
 supabase/migrations/002_customer_notifications.sql   outreach tracking, notification email wording, brand wording fixes
 supabase/migrations/003_recognition_certificates.sql  Gold Class – Aluminum and Platinum role, certificate wording
+supabase/migrations/004_manual_entries_and_staff_issue.sql  add people by hand; staff-issued certificates
 supabase/functions/manage-staff/          team management (create users, reset passwords, deactivate)
 samples/                                  sample Gold Class and Platinum lists for practice uploads
 ```
@@ -85,5 +88,6 @@ In an empty Supabase project, run these in order in the SQL editor:
 2. `seed.sql`
 3. `migrations/002_customer_notifications.sql`
 4. `migrations/003_recognition_certificates.sql`
+5. `migrations/004_manual_entries_and_staff_issue.sql`
 
 Then deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
