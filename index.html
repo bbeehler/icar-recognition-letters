@@ -909,7 +909,7 @@ async function openNotify(r, lang = 'en', opts = {}) {
     </div>
     <h3 class="section-head" style="margin:24px 0 6px">History</h3><ul class="history" id="nHist"><li class="muted">Loading…</li></ul>
     ${r.source === 'manual' ? `<div class="spread" style="margin-top:16px;border-top:1px solid var(--gray-25);padding-top:14px"><span class="small muted">Added by hand${r.added_at ? ' on ' + esc(fmtShort(r.added_at)) : ''}.</span>
-      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn sm secondary" id="nEdit">Edit details</button><button class="btn sm danger" id="nRemove">Remove</button></div></div>` : ''}`, true);
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn sm secondary" id="nEdit">Edit details</button>${ADM.staff.role === 'admin' ? '<button class="btn sm danger" id="nRemove">Remove</button>' : ''}</div></div>` : ''}`, true);
   $('#nClose').onclick = closeModal;
   $$('[data-nl]').forEach(b => b.onclick = () => openNotify(r, b.dataset.nl));
   const issue = async btn => {

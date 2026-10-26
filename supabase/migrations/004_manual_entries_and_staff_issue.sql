@@ -131,3 +131,15 @@ end $$;
 
 revoke execute on function public.replace_recognition_list, public.save_recognition, public.delete_recognition, public.staff_issue_letter from public, anon, authenticated;
 grant execute on function public.replace_recognition_list, public.save_recognition, public.delete_recognition, public.staff_issue_letter to authenticated;
+
+-- Only admins can remove manually added customers
+create or replace function public.delete_recognition(p_id bigint) returns boolean
+language plpgsql volatile security definer set search_path = '' as $$
+begin
+  if not public.is_admin() then raise exception 'Only admins can remove customers.' using errcode = '42501'; end if;
+  delete from public.recognitions where id = p_id and source = 'manual';
+  if not found then raise exception 'Only manually added records can be removed here.' using errcode = '22023'; end if;
+  return true;
+end $$;
+revoke execute on function public.delete_recognition from public, anon, authenticated;
+grant execute on function public.delete_recognition to authenticated;
