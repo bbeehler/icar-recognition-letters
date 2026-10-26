@@ -657,7 +657,7 @@ async function viewNotify() {
       </div>
       <div class="filters">
         <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, I-CAR ID, contact, email or city" value="${esc(NF.q)}"></div>
-        <div><button class="btn secondary" id="nf_x">Export for mail merge</button></div>
+        <div><button class="btn secondary" id="nf_x" title="Spreadsheet of the customers shown, with contact details and personal links">Download list</button></div>
       </div>
       <div class="chips" id="nfChips"></div>
       <div id="nfRes" style="margin-top:14px"><div class="center" style="min-height:160px"><span class="spinner" style="color:#006cb4"></span></div></div>
@@ -761,7 +761,7 @@ async function exportMailMerge(e) {
     csvDownload(all, [['display_name', 'Name'], ['icar_id', 'I-CAR ID'], ['contact_name', 'Contact name'], ['contact_email', 'Email'], ['contact_phone', 'Phone'], ['city', 'City'], ['province', 'Province'],
       ['link_en', 'Personal link (EN)', r => personalLink(r.program, r.icar_id, 'en')], ['link_fr', 'Personal link (FR)', r => personalLink(r.program, r.icar_id, 'fr')],
       ['status', 'Status', r => r.letters > 0 ? 'Letter downloaded' : r.last_contact_at ? 'Contacted' : 'Not contacted']],
-      `icar-${PROGRAM[NF.program].slug.toLowerCase()}-notify-${NF.status}-${new Date().toISOString().slice(0, 10)}.csv`);
+      `icar-${PROGRAM[NF.program].slug.toLowerCase()}-customers-${NF.status}-${new Date().toISOString().slice(0, 10)}.csv`);
     toast(`Exported ${all.length.toLocaleString()} customers`);
   } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
 }
