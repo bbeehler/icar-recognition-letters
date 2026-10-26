@@ -1,1 +1,0 @@
-# icar-recognition-letters
