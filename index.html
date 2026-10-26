@@ -885,8 +885,9 @@ async function openNotify(r, lang = 'en', opts = {}) {
       <div><div>${progBadge(r.program)}</div><h2 style="margin:6px 0 0">${esc(r.display_name)}</h2><div class="muted small">I-CAR ID ${esc(r.icar_id)}${r.contact_name ? ' · Contact: ' + esc(r.contact_name) : ''}</div></div>
       <div class="lang-toggle" role="group" aria-label="Message language"><button data-nl="en" class="${lang === 'en' ? 'on' : ''}">English</button><button data-nl="fr" class="${lang === 'fr' ? 'on' : ''}">Français</button></div>
     </div>
-    <div class="refbox spread" style="margin-bottom:18px"><div><b>Issue it now</b><div class="small muted">Download their ${lang === 'fr' ? 'French' : 'English'} certificate and letter to email or print yourself. It’s logged under your name.</div></div>
-      <button class="btn" id="nIssue" style="flex:0 0 auto">Download certificate and letter</button></div>
+    <div class="refbox" style="margin-bottom:18px"><div class="spread"><div><b>Issue it now</b><div class="small muted">Their ${lang === 'fr' ? 'French' : 'English'} certificate and letter, logged under your name.</div></div>
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn" id="nIssueMail" style="flex:0 0 auto" title="Creates an Outlook email with the PDF attached">Email it with attachment</button><button class="btn secondary" id="nIssue" style="flex:0 0 auto">Download only</button></div></div>
+      <div id="nIssueMsg"></div></div>
     <label class="f" for="nLink">Or send them their personal link</label>
     <div class="copyrow"><input id="nLink" type="text" readonly value="${esc(v.link)}"><button class="btn secondary" id="nCopyLink">Copy link</button></div>
     <div class="help">Opens the letter page with ${r.program === 'gold_class' ? 'their I-CAR ID filled in. They confirm with their postal code' : 'their I-CAR ID filled in. They confirm with their last name'}.</div>
@@ -924,6 +925,31 @@ async function openNotify(r, lang = 'en', opts = {}) {
     } catch (err) { toast(err.message, 'err'); busy(btn, false); }
   };
   $('#nIssue').onclick = e => issue(e.currentTarget);
+  $('#nIssueMail').onclick = async e => {
+    const btn = e.currentTarget, to = $('#nTo').value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { $('#nTo').focus(); return $('#nIssueMsg').innerHTML = '<div class="alert warn" style="margin-top:12px">Enter their email address in the <b>To</b> box below first.</div>'; }
+    busy(btn, true, 'Preparing…');
+    try {
+      const { data, error } = await sb.rpc('staff_issue_letter', { p_recognition_id: r.id, p_language: lang });
+      if (error) throw error;
+      const doc = await buildLetterPdf(data, await loadContent(true));
+      const t = ATTACH_MSG[lang], fname = letterFilename(data);
+      const eml = buildEml({ to, subject: fillMsg(t.subject, v), body: fillMsg(t.body, v), filename: fname, pdfBase64: doc.output('datauristring').split(',')[1] });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([eml], { type: 'message/rfc822' }));
+      a.download = `Email to ${String(r.display_name).replace(/[\\/:*?"<>|]/g, '').slice(0, 60)}.eml`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      busy(btn, false);
+      $('#nIssueMsg').innerHTML = `<div class="alert ok" style="margin-top:12px"><b>Email ready.</b> Open the downloaded <b>.eml</b> file. It opens in Outlook as a new email to ${esc(to)} with the certificate and letter attached. Review it and click Send.
+        <div style="margin-top:10px"><button class="btn sm" id="nLogAttach">✓ I sent it. Log email sent</button></div></div>`;
+      $('#nLogAttach').onclick = async ev => {
+        busy(ev.currentTarget, true, 'Saving…');
+        const { error: le } = await sb.rpc('log_customer_contact', { p_recognition_id: r.id, p_method: 'email', p_detail: to, p_note: `Certificate and letter attached (${data.code})` });
+        if (le) { busy(ev.currentTarget, false); return toast(le.message, 'err'); }
+        toast('Email logged'); closeModal(); if (ADM.tab === 'notify') loadNotify();
+      };
+      if (ADM.tab === 'notify') loadNotify();
+      loadHistory();
+    } catch (err) { toast(err.message, 'err'); busy(btn, false); }
+  };
   if (opts.autoIssue) issue($('#nIssue'));
   $('#nEdit') && ($('#nEdit').onclick = () => openCustomerForm(r.program, r));
   $('#nRemove') && ($('#nRemove').onclick = async e => {
@@ -947,6 +973,8 @@ async function openNotify(r, lang = 'en', opts = {}) {
   };
   $('#nLogEmail').onclick = e => log('email', e.currentTarget);
   $('#nLogPhone').onclick = e => log('phone', e.currentTarget);
+  loadHistory();
+  async function loadHistory() {
   const [{ data: contacts }, { data: letters }] = await Promise.all([
     sb.from('customer_contacts').select('method, contact_detail, note, contacted_at, staff:contacted_by(full_name,email)').eq('program', r.program).eq('icar_id_norm', r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, '')).order('contacted_at', { ascending: false }),
     sb.from('letter_requests').select('created_at, requester_name, requester_email, language, issued_by').eq('program', r.program).eq('icar_id_norm', r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, '')).order('created_at', { ascending: false })
@@ -954,6 +982,73 @@ async function openNotify(r, lang = 'en', opts = {}) {
   const items = [...(contacts || []).map(c => ({ at: c.contacted_at, html: `<b>${c.method === 'phone' ? 'Phoned' : 'Emailed'}</b>${c.contact_detail ? ' ' + esc(c.contact_detail) : ''} by ${esc(c.staff?.full_name || c.staff?.email || 'staff')}${c.note ? ` — ${esc(c.note)}` : ''}` })),
     ...(letters || []).map(l => ({ at: l.created_at, html: l.issued_by ? `<b>Certificate issued</b> by ${esc(l.requester_name)} (staff), ${esc(l.language.toUpperCase())}` : `<b>Certificate downloaded</b> by ${esc(l.requester_name)} (${esc(l.requester_email)}), ${esc(l.language.toUpperCase())}` }))].sort((a, b) => new Date(b.at) - new Date(a.at));
   const h = $('#nHist'); if (h) h.innerHTML = items.length ? items.map(i => `<li><span class="muted">${esc(fmtDateTime(i.at))}</span> · ${i.html}</li>`).join('') : '<li class="muted">No contact or letters yet.</li>';
+  }
+}
+
+/* ---------- Email with the PDF attached (.eml draft that opens in Outlook) ---------- */
+const ATTACH_MSG = {
+  en: { subject: 'Your I-CAR® {{program}} recognition certificate',
+    body: `Hello {{contact}},
+
+Congratulations on {{name}}'s I-CAR® {{program}} recognition. Your official recognition certificate and confirmation letter are attached.
+
+You can download them again at any time here:
+{{link}}
+
+Thank you for your commitment to complete, safe and quality repairs.
+
+{{sender}}
+I-CAR Canada` },
+  fr: { subject: 'Votre certificat de reconnaissance {{program}} d’I-CAR®',
+    body: `Bonjour {{contact}},
+
+Félicitations pour la reconnaissance {{program}} d’I-CAR® de {{name}}. Vous trouverez ci-joints votre certificat de reconnaissance officiel et votre lettre de confirmation.
+
+Vous pouvez les télécharger de nouveau en tout temps ici :
+{{link}}
+
+Merci de votre engagement envers des réparations complètes, sécuritaires et de qualité.
+
+{{sender}}
+I-CAR Canada` }
+};
+function b64utf8(str) { const b = new TextEncoder().encode(str); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); }
+function wrap76(b64) { return b64.replace(/.{1,76}/g, '$&\r\n'); }
+function buildEml({ to, subject, body, filename, pdfBase64 }) {
+  const bnd = 'icar-' + Math.random().toString(36).slice(2);
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5">${esc(body).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>').replace(/\n/g, '<br>')}</div>`;
+  const alt = 'alt-' + bnd;
+  return [
+    `To: ${to}`,
+    `Subject: =?UTF-8?B?${b64utf8(subject)}?=`,
+    'X-Unsent: 1',
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/mixed; boundary="${bnd}"`,
+    '',
+    `--${bnd}`,
+    `Content-Type: multipart/alternative; boundary="${alt}"`,
+    '',
+    `--${alt}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrap76(b64utf8(body)),
+    `--${alt}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrap76(b64utf8(html)),
+    `--${alt}--`,
+    '',
+    `--${bnd}`,
+    `Content-Type: application/pdf; name="${filename}"`,
+    `Content-Disposition: attachment; filename="${filename}"`,
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrap76(pdfBase64),
+    `--${bnd}--`,
+    ''
+  ].join('\r\n');
 }
 
 async function exportMailMerge(e) {
