@@ -1,93 +1,81 @@
-# I-CAR Recognition Certificates
+# I-CAR Gold Class Certificates
 
-Official Gold Class®, Gold Class® – Aluminum and Platinum™ recognition certificates, each with a confirmation letter from Scott Sinclair, for I-CAR Canada customers. A stopgap until the new i-car.ca.
+Official Gold Class® and Gold Class® – Aluminum recognition certificates for I-CAR Canada stores, each with the official confirmation letter signed by Scott Sinclair, Director, I-CAR Canada. A stopgap until the new i-car.ca.
 
-**How it works:** Tanja's team uploads the current Gold Class and Platinum lists. They email or phone each customer with a personal link and log the contact in the app. The customer opens the link, confirms who they are, and downloads one PDF in English or French: page 1 is their recognition certificate, page 2 is Scott's letter. Every contact and every download is tracked.
+**How it works:** each month Tanja's team uploads the *Active Gold Stores* export from the I-CAR system, as it comes. The app tidies the shop names, flags Aluminum stores and expiry dates, and shows which stores are new or renewed. The team emails or phones each store with a personal link and logs the contact. The store opens the link, confirms with its **store number** and **business postal code**, chooses English or French, and downloads one PDF: page 1 is the certificate, page 2 is the letter. Every contact and every download is tracked.
 
 | Page | Address |
 |---|---|
-| Customer page | `index.html`. Personal links pre-fill the I-CAR ID: `?program=gold_class&id=12345` (add `&lang=fr` for French) |
-| Staff back end | `index.html#/admin` |
+| Customer page | `https://certificate.aiacanada.com/`. Personal links pre-fill the store number: `?id=36950` (add `&lang=fr` for French) |
+| Staff back end | `https://certificate.aiacanada.com/#/admin` |
 
 The front end is one file, `index.html`, hosted on GitHub Pages, with brand assets in `assets/`. The back end is the Supabase project **I-CAR Recognition Letters** (`fwtzwkdcxkcnscqkyxhf`, Canada Central).
 
-## For customers
+## For stores
 
 1. Open the link the team sent (or the page itself).
-2. Choose Gold Class® or Platinum™. The I-CAR ID is already filled in from a personal link.
-3. Confirm with one detail: the **business postal code** for Gold Class, or the **last name** for Platinum.
-4. Enter your name and email, with an optional opt-in to I-CAR Canada emails, and the PDF downloads.
+2. Enter the store number (already filled in from a personal link) and the business postal code. Common typos such as the letter O for zero are forgiven.
+3. Enter your name and email, choose English or French (any store, including Quebec, can choose either), with an optional opt-in to I-CAR Canada emails. The PDF downloads.
 
-Ten failed attempts on one I-CAR ID lock it for an hour. Each letter carries a reference number in its footer, so a customer who calls can be matched to the log.
+Stores whose Gold Class has expired are told so and asked to contact collisiontraining@aiacanada.com. Ten failed attempts on one store number lock it for an hour. Each letter carries a reference number in its footer.
 
 ## For Tanja's team (`#/admin`)
 
-- **Overview**: who hasn't been contacted yet, who has, and how many letters have been downloaded.
-- **Notify customers**: pick Gold Class or Platinum and filter by *Not contacted*, *Contacted, no letter yet* or *Letter downloaded*. **Notify** opens the customer's personal link, a ready-to-send email (English or French) and a phone script. **Open in email app** starts the email in Outlook. Then **Log email sent** or **Log phone call**, with an optional note, and the full history for that customer is shown. **Download list** downloads the customers shown as a spreadsheet, with contact details and personal links (EN and FR).
-- **Add one by hand** (Overview, Notify customers or Recognition lists): add a single Gold Class shop or Platinum technician without uploading a list. **Save and issue now** downloads their certificate and letter straight away, logged under your name. **Save and send them their link** opens the email and phone options. Manually added people are tagged in the list and can be edited by anyone on the team and removed by admins only. Removing a customer also deletes their issued certificates and contact history, so they drop out of the stats. If a later upload includes the same I-CAR ID, the list version takes over.
-- **Issue it now** (in any customer's Notify window): **Email it with attachment** creates a ready-to-send Outlook email (an `.eml` file) to the address in **To**. It has the certificate and letter PDF attached, so open it, review and click Send, then click **I sent it. Log email sent**. **Download only** saves the PDF to email or print yourself. Both are in English or French and logged under your name.
-- **Recognition lists**: upload the latest Excel or CSV export from the I-CAR system. Columns are auto-matched, with a preview. Include email and phone columns to make notifying easier. A new upload replaces the list; letters and the contact history are kept.
-- **Letters issued**: search, filter, export to CSV, or re-download any letter.
-- **Letter & email wording**: edit the letter text and the notification email (English and French), the signatory, the signature image and the customer contact email.
-- **Team** (admins only): add people (with a temporary password), reset passwords, change roles, deactivate accounts. A person's name signs the notification emails they send.
+- **Overview**: stores on the list (and how many are Aluminum), new or renewed since the last upload, not yet contacted, certificates issued, expired.
+- **Gold Class list**: upload the monthly *ICAR – Active Gold Stores* Excel file unchanged. The app:
+  - reads the **Current** sheet and recognises its columns (Gold Class, Number, Name, Phone, Address, City, Province, Postal Code, Expiration) automatically;
+  - removes anything in brackets from shop names, except **(CarrXpert)**, which stays on; *(CarrXpert NA)* is removed. Every change is listed before you confirm;
+  - marks *Gold Class – Aluminum* stores, which get the Aluminum certificate and letter;
+  - keeps each store's expiry date and blocks downloads once it has passed;
+  - after the upload, shows how many stores are **new**, **renewed** (later expiry date) and **no longer on the list**, with a button to notify the new and renewed ones.
+- **Notify customers**: filter by *New or renewed*, *Not contacted*, *Contacted*, *Certificate issued* or *Expired*. **Notify** opens the store's personal link, a ready-to-send email (English or French) and a phone script. Log each email or call. **Download list** exports the stores shown, with phone numbers and personal links.
+- **Issue it now** (in any store's Notify window): **Email it with attachment** creates an Outlook email (`.eml`) with the certificate and letter attached; **Download only** saves the PDF.
+- **Edit details** (any store): correct the name printed on the certificate. A corrected name is **remembered on every future upload**. Expiry date and Aluminum can also be changed until the next upload.
+- **+ Add a store**: for a store not on the list yet. Admins can remove stores added by hand (this also deletes their certificates and contact history). If a later upload includes the same store number, the list version takes over.
+- **Certificates issued**: search, export to CSV, or re-download any certificate.
+- **Letter & email wording**: the four official letters (Gold Class EN/FR, Aluminum EN/FR), the notification email, the signatory, signature image and contact email.
+- **Team** (admins only): add people, reset passwords, change roles, deactivate accounts.
 
-## The certificate
+The export has no email column, so the first contact is usually by phone. Add an email address with **Edit details** or type it in the Notify window.
 
-Each certificate is modelled on the I-CAR recognition plaque for that level (from *ICAR-Recognition_Document_2025_ENFR*): a black frame around a brushed-silver face, with the recognition logo, *Presented to / Présenté à*, the name, *For their commitment to a high level of technical training / Attestant un engagement envers une formation technique de haut niveau*, a year plate and the I-CAR Canada logo.
+## The certificate and letter
 
-| Level | Layout | Comes from the list |
-|---|---|---|
-| Gold Class® | Portrait, Gold Class logo, business name | Gold Class list |
-| Gold Class® – Aluminum | Portrait, Aluminum logo, business name; the letter adds an Aluminum line | Gold Class list, **Aluminum** column = Yes / X / 1 |
-| Platinum™ | Landscape, *Recognition / Reconnaissance*, Platinum logo, technician's name and role | Platinum list, optional **Role** column (standard roles are translated to French) |
+The certificate is modelled on the Gold Class plaque: a black frame around a brushed-silver face, the Gold Class (or Gold Class – Aluminum) logo, *Presented to / Présenté à*, the store name, *For their commitment to a high level of technical training / Attestant un engagement envers une formation technique de haut niveau*, a year plate and the I-CAR Canada logo. The year plate shows the year the current Gold Class period began (expiry date minus one year), matching "Renewal date = payment date" in the plaque instructions.
 
-The year plate shows the year the certificate was issued. The certificate type is set by the customer's language choice and the list. For example, an English request from an Aluminum shop gets the English Aluminum certificate and an English letter.
+The letter follows the official templates (SharePoint › Plaques › Letter templates › Final Version): store name and address, date, "Dear …", the official text, and Scott Sinclair's sign-off, on I-CAR Canada letterhead.
 
-**Missing artwork:** the design system only has the French Gold Class Aluminium logo. Add the English file at `assets/cert/gold-class-aluminum-en.png` (transparent PNG, about 640px tall). Until then, English Aluminum certificates use the French logo.
+**Missing artwork:** the design system only has the French *Catégorie Or Aluminium* logo. Add the English file at `assets/cert/gold-class-aluminum-en.png` (transparent PNG, about 640px tall). Until then, English Aluminum certificates use the French logo.
 
 ## Branding
 
-Built to the **I-CAR Canada design system**:
-- I-CAR Blue (`#006cb4`) with navy hover and focus;
-- Source Sans 3 for web type;
-- the blue gradient headline box;
-- the official I-CAR Canada logo, always on white;
-- the language-matched Gold Class® and Platinum™ logos;
-- I-CAR® / Gold Class® / Platinum™ marks as specified.
-
-The PDF follows the letterhead rules: logo top left at 1.28in wide, the program logo top right, 1pt I-CAR Blue rules, 1in side margins and a 1.5in bottom margin. The logos and fonts in `assets/` come from the design system. Never recolour or redraw them.
+Built to the **I-CAR Canada design system**: I-CAR Blue (`#006cb4`), Source Sans 3 for web type, Barlow Condensed on the certificate, the official I-CAR Canada logo always on white, language-matched Gold Class® logos. The letterhead uses the logo top left, the program logo top right, 1pt I-CAR Blue rules, 1in side margins and a 1.5in bottom margin. Never recolour or redraw the logos in `assets/`.
 
 ## Repository layout
 
 ```
 index.html                                customer page and staff back end
-assets/                                   I-CAR Canada, Gold Class and Platinum logos (EN/FR); Source Sans 3 (web) and Barlow Condensed (certificate) fonts
-assets/cert/                              high-resolution recognition logos for the certificates
+CNAME                                     certificate.aiacanada.com
+assets/                                   I-CAR Canada and Gold Class logos (EN/FR); fonts
+assets/cert/                              high-resolution recognition logos for the certificate
 supabase/migrations/001_schema.sql        tables, security rules, letter functions
-supabase/seed.sql                         default letter wording and sign-off
-supabase/migrations/002_customer_notifications.sql   outreach tracking, notification email wording, brand wording fixes
-supabase/migrations/003_recognition_certificates.sql  Gold Class – Aluminum and Platinum role, certificate wording
-supabase/migrations/004_manual_entries_and_staff_issue.sql  add people by hand; staff-issued certificates
+supabase/seed.sql                         original letter wording and sign-off
+supabase/migrations/002_customer_notifications.sql   outreach tracking, notification email
+supabase/migrations/003_recognition_certificates.sql  Aluminum flag, certificate wording
+supabase/migrations/004_manual_entries_and_staff_issue.sql  add stores by hand; staff-issued certificates
+supabase/migrations/005_gold_class_system_export.sql  Gold Class only: system export, store number + postal code,
+                                          expiry, new/renewed, name corrections, official letters, Scott Sinclair
 supabase/functions/manage-staff/          team management (create users, reset passwords, deactivate)
-samples/                                  sample Gold Class and Platinum lists for practice uploads
+samples/SAMPLE-Active-Gold-Stores.xlsx    made-up stores in the system export format, for practice uploads
 ```
 
-## Setup
+## Setup still to finish
 
-1. **GitHub Pages**: Settings → Pages → Deploy from a branch → `main` / root. Before sending links to customers, settle on a permanent address (ideally a custom domain such as `letters.i-car.ca`), because those links will stop working if the address changes. If you use a custom domain, set `PUBLIC_URL` in the `CONFIG` block at the top of `index.html`.
-2. **Supabase → Authentication → URL Configuration**: set the Site URL to the Pages address.
-3. **First admin**: open `…/#/admin` and create the first account with an @aiacanada.com email (done for Brian).
-4. **Lock down sign-ups**: Authentication → Sign In / Providers → turn off *Allow new users to sign up*; add everyone else from the Team tab. Turn on *Leaked password protection*.
-5. **Wording**: upload Scott's signature, add the customer contact email, and get the letter wording approved.
-6. **Upload the lists**, then start notifying customers.
+1. **DNS and HTTPS** for `certificate.aiacanada.com` (CNAME to `bbeehler.github.io`, then *Enforce HTTPS* in GitHub Pages).
+2. **Supabase → Authentication → URL Configuration**: set the Site URL to `https://certificate.aiacanada.com`.
+3. **Lock down sign-ups**: turn off *Allow new users to sign up* and turn on *Leaked password protection*. Add everyone else from the Team tab.
+4. **Wording**: upload Scott's signature image.
+5. **Upload the September list**, then start notifying stores.
 
 ## Rebuilding the back end
 
-In an empty Supabase project, run these in order in the SQL editor:
-1. `migrations/001_schema.sql`
-2. `seed.sql`
-3. `migrations/002_customer_notifications.sql`
-4. `migrations/003_recognition_certificates.sql`
-5. `migrations/004_manual_entries_and_staff_issue.sql`
-
-Then deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
+In an empty Supabase project, run `001_schema.sql`, `seed.sql`, then migrations `002` to `005` in order. Deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.

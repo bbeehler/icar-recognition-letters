@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I-CAR Recognition Certificates</title>
-<meta name="description" content="Download your official I-CAR Canada Gold Class or Platinum recognition letter.">
+<meta name="description" content="Download your official I-CAR Canada Gold Class recognition certificate and letter.">
 <link rel="icon" href="assets/icar-canada-logo.svg">
 <style>
 /* I-CAR Canada design system: tokens */
@@ -200,12 +200,10 @@ const ASSET = {
   logo: 'assets/icar-canada-logo.svg',
   logoPng: 'assets/icar-canada-logo.png',
   gold_class: { en: 'assets/gold-class-en.png', fr: 'assets/gold-class-fr.png' },
-  platinum: { en: 'assets/platinum-en.png', fr: 'assets/platinum-fr.png' },
   aluminum: { en: 'assets/cert/gold-class-aluminum-en.png', fr: 'assets/cert/gold-class-aluminium-fr.png' },
   cert: {
     gold_class: { en: 'assets/cert/gold-class-en.png', fr: 'assets/cert/gold-class-fr.png' },
-    aluminum: { en: 'assets/cert/gold-class-aluminum-en.png', fr: 'assets/cert/gold-class-aluminium-fr.png' },
-    platinum: { en: 'assets/cert/platinum-en.png', fr: 'assets/cert/platinum-fr.png' }
+    aluminum: { en: 'assets/cert/gold-class-aluminum-en.png', fr: 'assets/cert/gold-class-aluminium-fr.png' }
   },
   fontBold: 'assets/fonts/BarlowCondensed-700.ttf',
   fontSemi: 'assets/fonts/BarlowCondensed-600.ttf'
@@ -213,8 +211,8 @@ const ASSET = {
 // Recognition logo for a record: Gold Class – Aluminum shops get the Aluminum mark. Until the English
 // Aluminum artwork is added at assets/cert/gold-class-aluminum-en.png, the French file is used.
 function recogLogo(L, lang, size = 'web') {
-  if (L.program === 'gold_class' && L.aluminum) return [ASSET.aluminum[lang], ASSET.aluminum.fr];
-  return [size === 'cert' ? ASSET.cert[L.program][lang] : ASSET[L.program][lang]];
+  if (L.aluminum) return [ASSET.aluminum[lang], ASSET.aluminum.fr];
+  return [size === 'cert' ? ASSET.cert.gold_class[lang] : ASSET.gold_class[lang]];
 }
 async function firstImg(srcs) { for (const s of srcs) { const d = await imgData(s); if (d) return d; } return null; }
 
@@ -227,7 +225,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function toast(msg, kind = '') { const d = document.createElement('div'); d.textContent = msg; if (kind) d.className = kind; $('#toast').appendChild(d); setTimeout(() => d.remove(), kind === 'err' ? 6000 : 3000); }
 function publicUrl() { return (CONFIG.PUBLIC_URL || (location.origin + location.pathname)).replace(/[?#].*$/, ''); }
-function personalLink(program, icarId, lang) { const p = new URLSearchParams({ program, id: icarId }); if (lang === 'fr') p.set('lang', 'fr'); return publicUrl() + '?' + p.toString(); }
+function personalLink(icarId, lang) { const p = new URLSearchParams({ id: icarId }); if (lang === 'fr') p.set('lang', 'fr'); return publicUrl() + '?' + p.toString(); }
 function parseDate(d) { if (!d) return null; if (d instanceof Date) return d; return new Date(/^\d{4}-\d{2}-\d{2}$/.test(d) ? d + 'T12:00:00' : d); }
 function fmtDate(d, lang = 'en') { const dt = parseDate(d); if (!dt || isNaN(dt)) return ''; return dt.toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { year: 'numeric', month: 'long', day: 'numeric' }); }
 function fmtShort(d) { const dt = parseDate(d); return dt ? dt.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }) : ''; }
@@ -240,10 +238,6 @@ function csvDownload(rows, cols, name) {
   const csv = '﻿' + [cols.map(c => c[1]).join(','), ...rows.map(r => cols.map(([k, , f]) => cell(f ? f(r) : r[k])).join(','))].join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
-const PROGRAM = {
-  gold_class: { en: 'Gold Class', fr: 'Gold Class', mark: 'Gold Class®', badge: 'gold', slug: 'Gold-Class' },
-  platinum: { en: 'Platinum', fr: 'Platinum', mark: 'Platinum™', badge: 'plat', slug: 'Platinum' }
-};
 
 /* ---------- letter content (wording, signatory, signature) ---------- */
 let CONTENT = null;
@@ -266,63 +260,80 @@ function fill(t, v) { return String(t || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (m,
 const BLUE = [0, 108, 180], CHARCOAL = [87, 94, 105];
 const PDF_T = { en: { ref: 'Letter reference' }, fr: { ref: 'Référence de la lettre' } };
 
-/* L = { program, language, name, icar_id, shop_name, address, city, province, postal_code, recognition_date, issued_at, code } */
+/* Recognition year shown on the certificate: the year the current Gold Class period started
+   (expiry is the end of the month, 12 months after payment), or the issue year if there is no expiry. */
+function recognitionYear(L) {
+  const exp = parseDate(L.expires_on);
+  if (exp && !isNaN(exp)) { const start = new Date(exp); start.setFullYear(start.getFullYear() - 1); start.setDate(start.getDate() + 1); return start.getFullYear(); }
+  return (L.issued_at ? parseDate(L.issued_at) : new Date()).getFullYear();
+}
+const PROV_FR = { 'Quebec': 'Québec', 'British Columbia': 'Colombie-Britannique', 'New Brunswick': 'Nouveau-Brunswick', 'Newfoundland and Labrador': 'Terre-Neuve-et-Labrador', 'Nova Scotia': 'Nouvelle-Écosse',
+  'Northwest Territories': 'Territoires du Nord-Ouest', 'Prince Edward Island': 'Île-du-Prince-Édouard' };
+function pickTemplate(content, L, lang) {
+  const all = content.templates || [], variant = L.aluminum ? 'aluminum' : 'standard';
+  return all.find(t => t.program === 'gold_class' && t.language === lang && (t.variant || 'standard') === variant)
+    || all.find(t => t.program === 'gold_class' && t.language === lang) || { heading: '', body: '' };
+}
+
+/* L = { language, name, icar_id, address, city, province, postal_code, expires_on, aluminum, issued_at, code } */
 async function buildLetterPdf(L, content, opts = {}) {
   const { jsPDF } = window.jspdf;
   const withCert = opts.certificate !== false;
-  const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: withCert && L.program === 'platinum' ? 'landscape' : 'portrait', compress: true });
+  const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait', compress: true });
   let first = 1;
   if (withCert) { await drawCertificate(doc, L); doc.addPage('letter', 'portrait'); first = 2; }
   const S = content.settings || {};
   const lang = L.language === 'fr' ? 'fr' : 'en';
-  const tpl = (content.templates || []).find(t => t.program === L.program && t.language === lang) || { heading: '', body: '' };
+  const tpl = pickTemplate(content, L, lang);
   const W = 612, H = 792, M = 72, CW = W - 2 * M, BOTTOM = H - 108;   // letterhead: 1in sides, 1.5in bottom
   const issued = L.issued_at ? parseDate(L.issued_at) : new Date();
-  const v = { name: L.name || '', icar_id: L.icar_id || '', shop_name: L.shop_name || '', date: fmtDate(issued, lang),
-    recognition_date: L.recognition_date ? fmtDate(L.recognition_date, lang) : '', program: PROGRAM[L.program]?.[lang] || '',
-    aluminum_note: L.program === 'gold_class' && L.aluminum ? (lang === 'fr' ? 'Cette entreprise détient également la désignation Gold Class® – Aluminium.' : 'This business also holds the Gold Class® – Aluminum designation.') : '' };
-  doc.setProperties({ title: fill(tpl.heading, v), author: 'I-CAR Canada', subject: v.name });
+  const v = { name: L.name || '', icar_id: L.icar_id || '', date: fmtDate(issued, lang), year: String(recognitionYear(L)),
+    expires_on: L.expires_on ? fmtDate(L.expires_on, lang) : '', program: L.aluminum ? (lang === 'fr' ? 'catégorie Or-Aluminium' : 'Gold Class - Aluminum') : 'Gold Class' };
+  doc.setProperties({ title: `I-CAR ${L.aluminum ? 'Gold Class - Aluminum' : 'Gold Class'} — ${v.name}`, author: 'I-CAR Canada', subject: v.name });
 
   const [logo, prog, sig] = await Promise.all([imgData(ASSET.logoPng), firstImg(recogLogo(L, lang)), imgData(S.signature_data)]);
   const header = async () => {
     if (logo) { const d = await imgDims(logo); const w = 92, h = w * d.h / d.w; doc.addImage(logo, 'PNG', M, 44, w, h, 'icar-logo', 'FAST'); }   // 1.28in letterhead logo
-    if (prog) { const d = await imgDims(prog); const h = 64, w = h * d.w / d.h; doc.addImage(prog, 'PNG', W - M - w, 34, w, h, 'prog-logo', 'FAST'); } // program logo, 0.9in tall
+    if (prog) { const d = await imgDims(prog); const h = 64, w = h * d.w / d.h; doc.addImage(prog, 'PNG', W - M - w, 34, w, h, 'prog-logo', 'FAST'); } // recognition logo, 0.9in tall
     doc.setDrawColor(...BLUE); doc.setLineWidth(1); doc.line(M, 112, W - M, 112);
   };
   const footer = (page, pages) => {
     doc.setDrawColor(...BLUE); doc.setLineWidth(1); doc.line(M, H - 72, W - M, H - 72);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CHARCOAL);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CHARCOAL);
     if (S.footer_text) doc.text(S.footer_text, M, H - 58);
     const right = [L.code ? `${PDF_T[lang].ref}: ${L.code}` : '', pages > 1 ? `${page}/${pages}` : ''].filter(Boolean).join('   ');
-    if (right) doc.text(right, W - M, H - 58, { align: 'right' });
+    if (right) doc.text(right, W - M, H - 46, { align: 'right' });
   };
   await header();
-  let y = 126 + 10;   // 1.75in top margin
-  const body = () => { doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(0, 0, 0); };
-  const LH = 14.5;
+  let y = 136;   // 1.75in top margin
+  const body = () => { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(0, 0, 0); };
+  const LH = 13.6;
   const newPage = async () => { doc.addPage(); await header(); body(); return 136; };
 
-  body(); doc.text(v.date, M, y); y += LH * 2;
+  // Address block, then date (as on the official templates)
   const addr = [];
-  if (L.program === 'platinum' && L.shop_name) addr.push(L.shop_name);
   if (L.address) addr.push(L.address);
-  const cityLine = ([L.city, L.province].filter(Boolean).join(', ') + (L.postal_code ? '  ' + L.postal_code : '')).trim();
+  const prov = lang === 'fr' ? (PROV_FR[L.province] || L.province) : L.province;
+  const cityLine = ([L.city, prov].filter(Boolean).join(', ') + (L.postal_code ? '  ' + L.postal_code : '')).trim();
   if (cityLine) addr.push(cityLine);
-  doc.setFont('helvetica', 'bold'); doc.text(doc.splitTextToSize(v.name, CW)[0], M, y); y += LH;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
+  for (const l of doc.splitTextToSize(v.name, CW)) { doc.text(l, M, y); y += LH; }
   body(); for (const a of addr) { doc.text(doc.splitTextToSize(a, CW)[0], M, y); y += LH; }
-  y += LH;
+  y += LH; doc.text(v.date, M, y); y += LH * 2;
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...BLUE);
-  for (const line of doc.splitTextToSize(fill(tpl.heading, v), CW)) { doc.text(line, M, y); y += 17; }
-  y += 8; body();
-
+  const heading = fill(tpl.heading, v).trim();
+  if (heading) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...BLUE);
+    for (const line of doc.splitTextToSize(heading, CW)) { doc.text(line, M, y); y += 16; }
+    y += 6; body();
+  }
   for (const p of fill(tpl.body, v).split(/\n\s*\n/)) {
     const txt = p.replace(/\s*\n\s*/g, ' ').trim(); if (!txt) continue;
     for (const line of doc.splitTextToSize(txt, CW)) { if (y > BOTTOM) y = await newPage(); doc.text(line, M, y); y += LH; }
     y += 7;
   }
   if (y + 80 > BOTTOM) y = await newPage();
-  if (sig) { const d = await imgDims(sig); if (d) { let h = 38, w = h * d.w / d.h; if (w > 170) { w = 170; h = w * d.h / d.w; } doc.addImage(sig, sig.startsWith('data:image/png') ? 'PNG' : 'JPEG', M, y - 4, w, h); y += h + 6; } } else y += 28;
+  if (sig) { const d = await imgDims(sig); if (d) { let h = 38, w = h * d.w / d.h; if (w > 170) { w = 170; h = w * d.h / d.w; } doc.addImage(sig, sig.startsWith('data:image/png') ? 'PNG' : 'JPEG', M, y - 4, w, h); y += h + 6; } } else y += 26;
   if (S.signatory_name) { doc.setFont('helvetica', 'bold'); doc.text(S.signatory_name, M, y); y += LH; }
   const title = lang === 'fr' ? S.signatory_title_fr : S.signatory_title_en;
   if (title) { body(); doc.text(title, M, y); }
@@ -330,24 +341,13 @@ async function buildLetterPdf(L, content, opts = {}) {
   for (let i = first; i <= pages; i++) { doc.setPage(i); footer(i - first + 1, pages - first + 1); }
   return doc;
 }
-function letterFilename(L) { return `I-CAR-${PROGRAM[L.program]?.slug || 'Recognition'}${L.aluminum ? '-Aluminum' : ''}-Recognition-${String(L.icar_id || '').replace(/[^A-Za-z0-9-]/g, '')}.pdf`; }
+function letterFilename(L) { return `I-CAR-Gold-Class${L.aluminum ? '-Aluminum' : ''}-${String(L.icar_id || '').replace(/[^A-Za-z0-9-]/g, '')}.pdf`; }
 
-/* ---------- Recognition certificate (modelled on the I-CAR recognition plaques) ---------- */
+/* ---------- Gold Class certificate (modelled on the I-CAR Gold Class plaques) ---------- */
 const CERT_T = {
-  en: { presented: 'PRESENTED TO', tagline: 'FOR THEIR COMMITMENT TO A HIGH LEVEL OF TECHNICAL TRAINING', recognition: 'RECOGNITION', role: 'IN THE ROLE OF' },
-  fr: { presented: 'PRÉSENTÉ À', tagline: 'ATTESTANT UN ENGAGEMENT ENVERS UNE FORMATION TECHNIQUE DE HAUT NIVEAU', recognition: 'RECONNAISSANCE', role: 'POUR LE RÔLE DE' }
+  en: { presented: 'PRESENTED TO', tagline: 'FOR THEIR COMMITMENT TO A HIGH LEVEL OF TECHNICAL TRAINING' },
+  fr: { presented: 'PRÉSENTÉ À', tagline: 'ATTESTANT UN ENGAGEMENT ENVERS UNE FORMATION TECHNIQUE DE HAUT NIVEAU' }
 };
-const ROLES = [
-  [/non.?struct/i, 'Non-Structural Technician', 'Technicien non spécialisé en structures'],
-  [/steel/i, 'Steel Structural Technician', 'Technicien en structures d’acier'],
-  [/alumin/i, 'Aluminum Structural Technician', 'Technicien en structures d’aluminium'],
-  [/refinish|finition|paint/i, 'Refinish Technician', 'Technicien en finition'],
-  [/estimat/i, 'Estimator', 'Estimateur']
-];
-function roleLabel(role, lang) {
-  if (!role) return '';
-  return role.split(/\s*[;,|\/]\s*/).filter(Boolean).map(r => { const m = ROLES.find(([rx]) => rx.test(r)); return m ? (lang === 'fr' ? m[2] : m[1]) : r; }).join(' · ');
-}
 const FONT_CACHE = {};
 function fontB64(src) {
   if (!FONT_CACHE[src]) FONT_CACHE[src] = fetch(src).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(buf => {
@@ -391,36 +391,17 @@ function yearPlate(doc, F, cx, y, year) {
 }
 async function drawCertificate(doc, L) {
   const lang = L.language === 'fr' ? 'fr' : 'en', T = CERT_T[lang], F = await certFonts(doc);
-  const year = (L.issued_at ? parseDate(L.issued_at) : new Date()).getFullYear();
   const [mark, corp] = await Promise.all([firstImg(recogLogo(L, lang, 'cert')), imgData(ASSET.logoPng)]);
   const name = String(L.name || '').toUpperCase();
-  const ink = () => doc.setTextColor(22, 22, 24), muted = () => doc.setTextColor(70, 73, 78);
-  if (L.program !== 'platinum') {
-    const W = 612, H = 792, cx = W / 2, P = plaqueFace(doc, W, H);
-    let y = 74;
-    if (mark) { const d = await imgDims(mark); const h = 318, w = h * d.w / d.h; doc.addImage(mark, 'PNG', cx - w / 2, y, w, h, 'cert-mark', 'FAST'); y += h; }
-    y += 34; doc.setFont(...F.semi); doc.setFontSize(11); muted(); centered(doc, T.presented, cx, y, 1.6);
-    doc.setFont(...F.bold); ink(); const lines = fitLines(doc, name, P.w - 70, 54, 34);
-    y += lines.length > 1 ? 44 : 52; for (const l of lines) { centered(doc, l, cx, y); y += doc.getFontSize() * 0.98; }
-    y += 2; doc.setFont(...F.semi); muted(); fitLines(doc, T.tagline, P.w - 90, 11, 8); centered(doc, T.tagline, cx, y, 0.6);
-    yearPlate(doc, F, cx, Math.max(y + 34, 612), year);
-    if (corp) { const d = await imgDims(corp); const w = 104, h = w * d.h / d.w; doc.addImage(corp, 'PNG', cx - w / 2, 686, w, h, 'icar-logo', 'FAST'); }
-  } else {
-    const W = 792, H = 612, P = plaqueFace(doc, W, H), cx = 528, colW = 372;
-    if (corp) { const d = await imgDims(corp); const w = 86, h = w * d.h / d.w; doc.addImage(corp, 'PNG', P.x + 22, P.y + 20, w, h, 'icar-logo', 'FAST'); }
-    if (mark) { const d = await imgDims(mark); const h = 330, w = h * d.w / d.h; doc.addImage(mark, 'PNG', P.x + 44, 128, w, h, 'cert-mark', 'FAST'); }
-    doc.setFont(...F.bold); ink(); fitLines(doc, T.recognition, colW, 58, 40); centered(doc, T.recognition, cx, 150);
-    doc.setFont(...F.semi); doc.setFontSize(10.5); muted(); centered(doc, T.presented, cx, 184, 1.6);
-    doc.setFont(...F.bold); ink(); const lines = fitLines(doc, name, colW, 48, 30);
-    let y = lines.length > 1 ? 222 : 236; for (const l of lines) { centered(doc, l, cx, y); y += doc.getFontSize() * 0.98; }
-    doc.setFont(...F.semi); muted(); fitLines(doc, T.tagline, colW, 10, 7.5); centered(doc, T.tagline, cx, y + 4, 0.4);
-    const role = roleLabel(L.role, lang).toUpperCase();
-    if (role) {
-      doc.setFontSize(9.5); centered(doc, T.role, cx, y + 44, 1.4);
-      doc.setFont(...F.bold); ink(); const rl = fitLines(doc, role, colW, 28, 16); let ry = y + 76; for (const l of rl) { centered(doc, l, cx, ry); ry += doc.getFontSize(); }
-    }
-    yearPlate(doc, F, cx, 470, year);
-  }
+  const W = 612, H = 792, cx = W / 2, P = plaqueFace(doc, W, H);
+  let y = 74;
+  if (mark) { const d = await imgDims(mark); const h = 318, w = h * d.w / d.h; doc.addImage(mark, 'PNG', cx - w / 2, y, w, h, 'cert-mark', 'FAST'); y += h; }
+  y += 34; doc.setFont(...F.semi); doc.setFontSize(11); doc.setTextColor(70, 73, 78); centered(doc, T.presented, cx, y, 1.6);
+  doc.setFont(...F.bold); doc.setTextColor(22, 22, 24); const lines = fitLines(doc, name, P.w - 70, 54, 32);
+  y += lines.length > 1 ? 44 : 52; for (const l of lines) { centered(doc, l, cx, y); y += doc.getFontSize() * 0.98; }
+  y += 2; doc.setFont(...F.semi); doc.setTextColor(70, 73, 78); fitLines(doc, T.tagline, P.w - 90, 11, 8); centered(doc, T.tagline, cx, y, 0.6);
+  yearPlate(doc, F, cx, Math.max(y + 34, 612), recognitionYear(L));
+  if (corp) { const d = await imgDims(corp); const w = 104, h = w * d.h / d.w; doc.addImage(corp, 'PNG', cx - w / 2, 686, w, h, 'icar-logo', 'FAST'); }
 }
 
 /* =====================================================================
@@ -429,58 +410,52 @@ async function drawCertificate(doc, L) {
 const T = {
   en: {
     tag: 'Recognition certificates',
-    title: 'Your I-CAR® recognition certificate',
-    intro: 'Download your official Gold Class® or Platinum™ recognition certificate, with a confirmation letter from I-CAR Canada, in English or French.',
-    s1: 'Choose your recognition', s2: 'Confirm it’s you', s3: 'Your contact details',
-    gold: 'Gold Class®', goldSub: 'For collision repair businesses',
-    plat: 'Platinum™', platSub: 'For individual technicians and professionals',
-    icarId: 'I-CAR ID', icarHelpGold: 'Your business’s I-CAR ID', icarHelpPlat: 'Your personal I-CAR ID',
+    title: 'Your I-CAR® Gold Class® certificate',
+    intro: 'Download your official Gold Class® recognition certificate, with a confirmation letter from I-CAR Canada, in English or French.',
+    s1: 'Confirm your business', s2: 'Your contact details',
+    storeNo: 'Store number', storeHelp: 'Your Gold Class store number. It’s in the email or call from I-CAR Canada.',
     postal: 'Business postal code', postalHelp: 'The postal code I-CAR has on file for your business',
-    last: 'Last name', lastHelp: 'As it appears on your I-CAR profile',
     yourName: 'Your name', yourEmail: 'Your email',
     letterLang: 'Certificate and letter language', english: 'English', french: 'French',
     consent: 'Yes, send me I-CAR Canada news, training updates and offers by email. I can unsubscribe at any time.',
     privacy: 'We record your name and email with each request so I-CAR Canada can keep track of the certificates and letters it issues.',
     submit: 'Download my certificate and letter', working: 'Checking…', making: 'Preparing your certificate…',
     readyTitle: 'Your certificate and letter are ready',
-    readyBody: n => `The recognition certificate and letter for ${n} have been downloaded to your device as one PDF.`,
+    readyBody: n => `The Gold Class® certificate and letter for ${n} have been downloaded to your device as one PDF.`,
     ref: 'Reference', refNote: 'Quote this reference if you contact I-CAR Canada about your certificate or letter.',
     again: 'Download again', another: 'Request another letter',
-    checkGold: 'the postal code', checkPlat: 'the last name',
     err: {
-      not_found: 'We couldn’t find a match. Check the I-CAR ID and {check}, and make sure you chose the right recognition. If your recognition is recent, our list may not be updated yet. Please contact us.',
-      too_many_attempts: 'Too many attempts for this I-CAR ID. Please try again in an hour or contact us.',
+      not_found: 'We couldn’t find a match. Check the store number and the business postal code. If your Gold Class® recognition is recent, our list may not be updated yet. Please contact us.',
+      expired: d => `Our records show this store’s Gold Class® recognition expired${d ? ' on ' + d : ''}. If you have renewed, our list may not be updated yet. Please contact us.`,
+      too_many_attempts: 'Too many attempts for this store number. Please try again in an hour or contact us.',
       invalid_contact: 'Enter your name and a valid email address.',
-      missing_fields: 'Enter the I-CAR ID and {check}.',
+      missing_fields: 'Enter the store number and the business postal code.',
       generic: 'Something went wrong. Please try again.'
     },
     contact: 'Questions? Contact', rights: 'I-CAR Canada', licence: 'Licensed by AIA Canada'
   },
   fr: {
     tag: 'Certificats de reconnaissance',
-    title: 'Votre certificat de reconnaissance I-CAR®',
-    intro: 'Téléchargez votre certificat de reconnaissance Gold Class® ou Platinum™ officiel, accompagné d’une lettre de confirmation d’I-CAR Canada, en français ou en anglais.',
-    s1: 'Choisissez votre reconnaissance', s2: 'Confirmez votre identité', s3: 'Vos coordonnées',
-    gold: 'Gold Class®', goldSub: 'Pour les entreprises de réparation de carrosserie',
-    plat: 'Platinum™', platSub: 'Pour les techniciens et les professionnels',
-    icarId: 'Numéro I-CAR', icarHelpGold: 'Le numéro I-CAR de votre entreprise', icarHelpPlat: 'Votre numéro I-CAR personnel',
+    title: 'Votre certificat Gold Class® d’I-CAR®',
+    intro: 'Téléchargez votre certificat de reconnaissance Gold Class® officiel, accompagné d’une lettre de confirmation d’I-CAR Canada, en français ou en anglais.',
+    s1: 'Confirmez votre entreprise', s2: 'Vos coordonnées',
+    storeNo: 'Numéro d’atelier', storeHelp: 'Votre numéro d’atelier Gold Class. Il figure dans le courriel ou l’appel d’I-CAR Canada.',
     postal: 'Code postal de l’entreprise', postalHelp: 'Le code postal inscrit au dossier I-CAR de votre entreprise',
-    last: 'Nom de famille', lastHelp: 'Tel qu’il figure à votre profil I-CAR',
     yourName: 'Votre nom', yourEmail: 'Votre courriel',
     letterLang: 'Langue du certificat et de la lettre', english: 'Anglais', french: 'Français',
     consent: 'Oui, envoyez-moi par courriel les nouvelles, les mises à jour sur la formation et les offres d’I-CAR Canada. Je peux me désabonner en tout temps.',
     privacy: 'Nous consignons votre nom et votre courriel avec chaque demande afin qu’I-CAR Canada puisse faire le suivi des certificats et des lettres émis.',
     submit: 'Télécharger mon certificat et ma lettre', working: 'Vérification…', making: 'Préparation de votre certificat…',
     readyTitle: 'Votre certificat et votre lettre sont prêts',
-    readyBody: n => `Le certificat de reconnaissance et la lettre de ${n} ont été téléchargés sur votre appareil en un seul PDF.`,
+    readyBody: n => `Le certificat Gold Class® et la lettre de ${n} ont été téléchargés sur votre appareil en un seul PDF.`,
     ref: 'Référence', refNote: 'Mentionnez cette référence si vous communiquez avec I-CAR Canada au sujet de votre certificat ou de votre lettre.',
     again: 'Télécharger de nouveau', another: 'Demander une autre lettre',
-    checkGold: 'le code postal', checkPlat: 'le nom de famille',
     err: {
-      not_found: 'Aucune correspondance trouvée. Vérifiez le numéro I-CAR et {check}, et assurez-vous d’avoir choisi la bonne reconnaissance. Si votre reconnaissance est récente, notre liste n’est peut-être pas encore à jour. Veuillez communiquer avec nous.',
-      too_many_attempts: 'Trop de tentatives pour ce numéro I-CAR. Réessayez dans une heure ou communiquez avec nous.',
+      not_found: 'Aucune correspondance trouvée. Vérifiez le numéro d’atelier et le code postal de l’entreprise. Si votre reconnaissance Gold Class® est récente, notre liste n’est peut-être pas encore à jour. Veuillez communiquer avec nous.',
+      expired: d => `Selon nos dossiers, la reconnaissance Gold Class® de cet atelier a expiré${d ? ' le ' + d : ''}. Si vous l’avez renouvelée, notre liste n’est peut-être pas encore à jour. Veuillez communiquer avec nous.`,
+      too_many_attempts: 'Trop de tentatives pour ce numéro d’atelier. Réessayez dans une heure ou communiquez avec nous.',
       invalid_contact: 'Entrez votre nom et une adresse courriel valide.',
-      missing_fields: 'Entrez le numéro I-CAR et {check}.',
+      missing_fields: 'Entrez le numéro d’atelier et le code postal de l’entreprise.',
       generic: 'Une erreur est survenue. Veuillez réessayer.'
     },
     contact: 'Des questions? Écrivez à', rights: 'I-CAR Canada', licence: 'Autorisé sous licence par l’AIA Canada'
@@ -488,7 +463,7 @@ const T = {
 };
 const QS = new URLSearchParams(location.search);
 let LANG = QS.get('lang') === 'fr' || (!QS.get('lang') && /^fr/i.test(navigator.language || '')) ? 'fr' : 'en';
-let PUB = { program: /^plat/i.test(QS.get('program') || '') ? 'platinum' : 'gold_class', result: null, form: { icar_id: QS.get('id') || '' } };
+let PUB = { result: null, form: { icar_id: QS.get('id') || '' } };
 
 function siteHead(right, tag) {
   return `<header class="site-head"><div class="in"><div class="brand"><img class="logo" src="${ASSET.logo}" alt="I-CAR Canada"><span class="tag">${esc(tag)}</span></div>${right}</div></header>`;
@@ -506,35 +481,27 @@ function bindLang(rerender) { $$('[data-lang]').forEach(b => b.onclick = () => {
 function savePubForm() {
   const f = $('#reqForm'); if (!f) return;
   const fd = new FormData(f);
-  PUB.program = fd.get('program') || PUB.program;
   PUB.form = { icar_id: fd.get('icar_id'), check: fd.get('check'), rname: fd.get('rname'), remail: fd.get('remail'), consent: !!fd.get('consent'), letter_lang: fd.get('letter_lang') };
 }
 
 function renderRequest() {
-  const t = T[LANG], f = PUB.form, gold = PUB.program === 'gold_class';
+  const t = T[LANG], f = PUB.form;
   if (PUB.result) return renderReady();
   const ll = f.letter_lang || LANG;
   app.innerHTML = pubShell(`
     <div class="headline-box"><h1>${esc(t.title)}</h1><hr><p>${esc(t.intro)}</p></div>
     <form id="reqForm" class="panel" novalidate>
-      <fieldset class="step" style="border:0;padding:0;margin:0">
-        <legend class="section-head"><span class="n">1</span>${esc(t.s1)}</legend>
-        <div class="choices">
-          <label class="choice"><input type="radio" name="program" value="gold_class" ${gold ? 'checked' : ''}><img src="${ASSET.gold_class[LANG]}" alt=""><div><b>${esc(t.gold)}</b><span>${esc(t.goldSub)}</span></div></label>
-          <label class="choice"><input type="radio" name="program" value="platinum" ${!gold ? 'checked' : ''}><img src="${ASSET.platinum[LANG]}" alt=""><div><b>${esc(t.plat)}</b><span>${esc(t.platSub)}</span></div></label>
-        </div>
-      </fieldset>
-      <div class="step">
-        <h2 class="section-head"><span class="n">2</span>${esc(t.s2)}</h2>
+      <div class="step" style="border-top:0;padding-top:0;margin-top:0">
+        <h2 class="section-head"><span class="n">1</span>${esc(t.s1)}</h2>
         <div class="row">
-          <div><label class="f" for="icar_id">${esc(t.icarId)}</label><input id="icar_id" name="icar_id" type="text" autocomplete="off" value="${esc(f.icar_id)}" required>
-            <div class="help">${esc(gold ? t.icarHelpGold : t.icarHelpPlat)}</div></div>
-          <div><label class="f" for="check">${esc(gold ? t.postal : t.last)}</label><input id="check" name="check" type="text" autocomplete="${gold ? 'postal-code' : 'family-name'}" value="${esc(f.check)}" required>
-            <div class="help">${esc(gold ? t.postalHelp : t.lastHelp)}</div></div>
+          <div><label class="f" for="icar_id">${esc(t.storeNo)}</label><input id="icar_id" name="icar_id" type="text" inputmode="numeric" autocomplete="off" value="${esc(f.icar_id)}" required>
+            <div class="help">${esc(t.storeHelp)}</div></div>
+          <div><label class="f" for="check">${esc(t.postal)}</label><input id="check" name="check" type="text" autocomplete="postal-code" value="${esc(f.check)}" required>
+            <div class="help">${esc(t.postalHelp)}</div></div>
         </div>
       </div>
       <div class="step">
-        <h2 class="section-head"><span class="n">3</span>${esc(t.s3)}</h2>
+        <h2 class="section-head"><span class="n">2</span>${esc(t.s2)}</h2>
         <div class="row">
           <div><label class="f" for="rname">${esc(t.yourName)}</label><input id="rname" name="rname" type="text" autocomplete="name" value="${esc(f.rname)}" required></div>
           <div><label class="f" for="remail">${esc(t.yourEmail)}</label><input id="remail" name="remail" type="email" autocomplete="email" value="${esc(f.remail)}" required></div>
@@ -548,24 +515,26 @@ function renderRequest() {
       </div>
     </form>`);
   bindLang(renderRequest);
-  $$('input[name=program]').forEach(r => r.onchange = () => { savePubForm(); PUB.form.check = ''; renderRequest(); $('#icar_id').focus(); });
   $('#reqForm').onsubmit = submitRequest;
+  if (f.icar_id && !f.check) setTimeout(() => $('#check')?.focus(), 30);
 }
 
 async function submitRequest(e) {
   e.preventDefault(); savePubForm();
   const t = T[LANG], f = PUB.form, btn = $('#reqBtn'), msg = $('#reqMsg');
-  const checkWord = PUB.program === 'gold_class' ? t.checkGold : t.checkPlat;
-  const showErr = k => { msg.innerHTML = `<div class="alert err" role="alert">${esc((t.err[k] || t.err.generic).replace('{check}', checkWord))}</div>`; };
+  const showErr = (k, data) => {
+    const m = t.err[k] || t.err.generic;
+    msg.innerHTML = `<div class="alert err" role="alert">${esc(typeof m === 'function' ? m(data?.expires_on ? fmtDate(data.expires_on, LANG) : '') : m)}</div>`;
+  };
   msg.innerHTML = '';
   if (!String(f.icar_id || '').trim() || !String(f.check || '').trim()) return showErr('missing_fields');
   if (!String(f.rname || '').trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(f.remail || '').trim())) return showErr('invalid_contact');
   busy(btn, true, t.working);
   try {
-    const { data, error } = await sb.rpc('request_letter', { p_program: PUB.program, p_icar_id: f.icar_id, p_check: f.check,
+    const { data, error } = await sb.rpc('request_letter', { p_program: 'gold_class', p_icar_id: f.icar_id, p_check: f.check,
       p_requester_name: f.rname, p_requester_email: f.remail, p_language: f.letter_lang || LANG, p_marketing_consent: !!f.consent });
     if (error) throw error;
-    if (!data?.ok) { busy(btn, false); return showErr(data?.error || 'generic'); }
+    if (!data?.ok) { busy(btn, false); return showErr(data?.error || 'generic', data); }
     busy(btn, true, t.making);
     await loadContent(true);
     PUB.result = data;
@@ -576,10 +545,10 @@ async function submitRequest(e) {
 async function downloadLetter(r) { const doc = await buildLetterPdf(r, CONTENT); doc.save(letterFilename(r)); }
 
 function renderReady() {
-  const t = T[LANG], r = PUB.result;
+  const t = T[LANG], r = PUB.result, logos = recogLogo(r, LANG);
   app.innerHTML = pubShell(`
     <div class="panel">
-      <div class="ready"><img src="${recogLogo(r, LANG)[0]}" onerror="this.onerror=null;this.src='${recogLogo(r, LANG).slice(-1)[0]}'" alt="${esc(PROGRAM[r.program].mark)}">
+      <div class="ready"><img src="${logos[0]}" onerror="this.onerror=null;this.src='${logos.slice(-1)[0]}'" alt="${r.aluminum ? 'Gold Class® – Aluminum' : 'Gold Class®'}">
         <div><h1 style="font-size:34px;color:var(--icar-blue)">${esc(t.readyTitle)}</h1><p style="margin:0">${esc(t.readyBody(r.name))}</p></div></div>
       <div class="refbox" style="margin-top:22px"><div class="small muted">${esc(t.ref)}</div><div class="mono" style="font-size:20px;font-weight:700">${esc(r.code)}</div><div class="small muted">${esc(t.refNote)}</div></div>
       <div class="row" style="margin-top:22px"><button class="btn" id="againBtn">${esc(t.again)}</button><button class="btn secondary" id="anotherBtn">${esc(t.another)}</button></div>
@@ -593,7 +562,7 @@ function renderReady() {
    STAFF BACK END
    ===================================================================== */
 const ADM = { session: null, staff: null, tab: 'overview' };
-const TABS = [['overview', 'Overview'], ['notify', 'Notify customers'], ['lists', 'Recognition lists'], ['letters', 'Letters issued'], ['design', 'Letter & email wording'], ['team', 'Team']];
+const TABS = [['overview', 'Overview'], ['notify', 'Notify customers'], ['lists', 'Gold Class list'], ['letters', 'Certificates issued'], ['design', 'Letter & email wording'], ['team', 'Team']];
 
 function authCard(inner) { return `${siteHead('', 'Recognition certificates · Staff')}<main class="pub" style="max-width:460px"><div class="panel">${inner}</div></main>`; }
 
@@ -701,74 +670,75 @@ function renderAdminShell() {
 }
 const view = () => $('#view');
 function loading() { view().innerHTML = '<div class="center" style="min-height:200px"><span class="spinner" style="color:#006cb4"></span></div>'; }
-function progBadge(p) { return `<span class="badge ${PROGRAM[p]?.badge || ''}">${esc(PROGRAM[p]?.en || p)}</span>`; }
+function progBadge(r) { return r && r.aluminum ? '<span class="badge gold">Gold Class – Aluminum</span>' : '<span class="badge gold">Gold Class</span>'; }
 function goTab(t) { ADM.tab = t; renderAdminShell(); }
+const todayISO = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Toronto' });
+const isExpired = r => !!(r && r.expires_on && r.expires_on < todayISO());
+function recBadges(r) {
+  return [r.aluminum ? '<span class="badge gold">Aluminum</span>' : '',
+    isExpired(r) ? '<span class="badge off">Expired</span>' : r.change_status === 'new' ? '<span class="badge ok">New</span>' : r.change_status === 'renewed' ? '<span class="badge ok">Renewed</span>' : '',
+    r.source === 'manual' ? '<span class="badge blue" title="Added by hand, not from the uploaded list">Added manually</span>' : ''].filter(Boolean).join(' ');
+}
 
 /* ---------- Overview ---------- */
 async function viewOverview() {
   loading();
   const [{ data: st, error }, { data: recent }] = await Promise.all([sb.rpc('get_dashboard_stats'), sb.from('letter_requests').select('*').order('created_at', { ascending: false }).limit(6)]);
   if (error) return view().innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
-  const list = p => (st.lists || []).find(l => l.program === p);
-  const listCard = p => { const l = list(p); return `<div class="panel"><div class="spread"><h3 style="margin:0">${progBadge(p)} list</h3><button class="btn sm secondary" data-go="lists">Update list</button></div>
-    ${l ? `<p style="margin:12px 0 0"><b>${l.row_count.toLocaleString()}</b> ${p === 'gold_class' ? 'businesses' : 'individuals'} can download letters</p><p class="small muted" style="margin:2px 0 0">${esc(l.filename || '')} · uploaded ${esc(fmtDateTime(l.uploaded_at))}${l.uploaded_by || l.uploaded_by_email ? ' by ' + esc(l.uploaded_by || l.uploaded_by_email) : ''}</p>`
-      : `<div class="alert warn" style="margin-top:12px">No list uploaded yet, so nobody can download a ${PROGRAM[p].en} letter.</div>`}</div>`; };
+  const l = (st.lists || []).find(x => x.program === 'gold_class');
+  const n = k => (st[k] || 0).toLocaleString();
   view().innerHTML = `
     <div class="stats">
-      <div class="stat alt"><div class="n">${(st.not_contacted || 0).toLocaleString()}</div><div class="l">Not yet contacted</div></div>
-      <div class="stat"><div class="n">${(st.contacted || 0).toLocaleString()}</div><div class="l">Customers contacted</div></div>
-      <div class="stat"><div class="n">${(st.unique_recipients || 0).toLocaleString()}</div><div class="l">Customers with a letter</div></div>
-      <div class="stat"><div class="n">${(st.letters_total || 0).toLocaleString()}</div><div class="l">Letters downloaded (all time)</div></div>
-      <div class="stat"><div class="n">${(st.letters_30d || 0).toLocaleString()}</div><div class="l">Letters in the last 30 days</div></div>
+      <div class="stat"><div class="n">${n('stores')}</div><div class="l">Gold Class stores${st.aluminum ? ` (${n('aluminum')} Aluminum)` : ''}</div></div>
+      <div class="stat alt"><div class="n">${n('new')}</div><div class="l">New or renewed this upload</div></div>
+      <div class="stat alt"><div class="n">${n('not_contacted')}</div><div class="l">Not yet contacted</div></div>
+      <div class="stat"><div class="n">${n('unique_recipients')}</div><div class="l">Stores with a certificate</div></div>
+      <div class="stat"><div class="n">${n('letters_total')}</div><div class="l">Certificates issued (${n('letters_30d')} in 30 days)</div></div>
+      <div class="stat"><div class="n">${n('expired')}</div><div class="l">Expired, can’t download</div></div>
     </div>
-    <div class="panel spread" style="margin-bottom:var(--space-md)"><div><h3 style="margin:0">Issue a certificate quickly</h3><p class="small muted" style="margin:2px 0 0">Add one shop or technician by hand, then download their certificate and letter or send them their link.</p></div>
-      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn" data-add="gold_class" style="flex:0 0 auto">+ Gold Class shop</button><button class="btn" data-add="platinum" style="flex:0 0 auto">+ Platinum technician</button></div></div>
-    ${st.not_contacted ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${st.not_contacted.toLocaleString()}</b> recognized customers haven’t been told about their letter yet.</span><button class="btn sm" data-go="notify">Notify customers</button></div>` : ''}
-    <div class="grid2">${listCard('gold_class')}${listCard('platinum')}</div>
-    <div class="panel"><div class="spread"><h3 style="margin:0">Latest letters</h3><button class="btn sm secondary" data-go="letters">View all</button></div>
-      ${recent?.length ? `<div class="tablewrap" style="margin-top:14px">${lettersTable(recent, false)}</div>` : '<p class="muted" style="margin:12px 0 0">No letters have been downloaded yet.</p>'}</div>`;
-  $$('[data-go]').forEach(b => b.onclick = () => goTab(b.dataset.go));
-  $$('[data-add]').forEach(b => b.onclick = () => openCustomerForm(b.dataset.add));
+    ${st.new ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${n('new')}</b> stores are new or renewed since the last upload.</span><button class="btn sm" data-go="notify" data-st="new">Notify them</button></div>`
+      : st.not_contacted ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${n('not_contacted')}</b> stores haven’t been told about their certificate yet.</span><button class="btn sm" data-go="notify" data-st="not_contacted">Notify customers</button></div>` : ''}
+    <div class="grid2">
+      <div class="panel"><div class="spread"><h3 style="margin:0">Gold Class list</h3><button class="btn sm secondary" data-go="lists">Upload this month’s list</button></div>
+        ${l ? `<p style="margin:12px 0 0"><b>${l.row_count.toLocaleString()}</b> stores on the list</p><p class="small muted" style="margin:2px 0 0">${esc(l.filename || '')} · uploaded ${esc(fmtDateTime(l.uploaded_at))}${l.uploaded_by || l.uploaded_by_email ? ' by ' + esc(l.uploaded_by || l.uploaded_by_email) : ''}</p>`
+          : '<div class="alert warn" style="margin-top:12px">No list uploaded yet. Upload the Active Gold Stores export from the I-CAR system.</div>'}</div>
+      <div class="panel"><h3 style="margin:0">Issue a certificate quickly</h3><p class="small muted" style="margin:4px 0 12px">Add one store by hand, then download its certificate and letter or send its link.</p>
+        <button class="btn" data-add="1">+ Add a store</button></div>
+    </div>
+    <div class="panel"><div class="spread"><h3 style="margin:0">Latest certificates</h3><button class="btn sm secondary" data-go="letters">View all</button></div>
+      ${recent?.length ? `<div class="tablewrap" style="margin-top:14px">${lettersTable(recent, false)}</div>` : '<p class="muted" style="margin:12px 0 0">No certificates have been issued yet.</p>'}</div>`;
+  $$('[data-go]').forEach(b => b.onclick = () => { if (b.dataset.st) { NF.status = b.dataset.st; NF.page = 0; } goTab(b.dataset.go); });
+  $$('[data-add]').forEach(b => b.onclick = () => openCustomerForm());
 }
 
-/* ---------- Add or edit one customer by hand ---------- */
-const PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'];
-function openCustomerForm(program, rec = null) {
-  const gold = program === 'gold_class', r = rec || {};
-  const last = r.last_name || (!gold && r.display_name ? r.display_name.split(/\s+/).pop() : '');
-  const first = !gold && r.display_name ? r.display_name.slice(0, r.display_name.length - last.length).trim() : '';
-  const roleOpts = ROLES.map(x => x[1]);
-  const curRole = r.role ? (ROLES.find(([rx]) => rx.test(r.role))?.[1] || r.role) : '';
+/* ---------- Add or edit one store ---------- */
+const PROVINCES = ['Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Nova Scotia', 'Northwest Territories', 'Nunavut', 'Ontario', 'Prince Edward Island', 'Quebec', 'Saskatchewan', 'Yukon'];
+function openCustomerForm(rec = null) {
+  const r = rec || {}, fromList = rec && rec.source !== 'manual';
+  const provOpts = PROVINCES.includes(r.province) || !r.province ? PROVINCES : [r.province, ...PROVINCES];
   openModal(`
     <button class="btn ghost x" id="cfClose" aria-label="Close">✕</button>
-    <div>${progBadge(program)}</div><h2 style="margin:6px 0 4px">${rec ? 'Edit' : 'Add'} ${gold ? 'a Gold Class shop' : 'a Platinum technician'}</h2>
-    <p class="small muted" style="margin:0 0 14px">${rec ? 'Changes apply to certificates issued from now on.' : 'For someone who isn’t on the uploaded list yet. If a later upload includes the same I-CAR ID, the list version takes over.'}</p>
+    <div>${progBadge(r)}</div><h2 style="margin:6px 0 4px">${rec ? 'Edit store details' : 'Add a store'}</h2>
+    <p class="small muted" style="margin:0 0 14px">${!rec ? 'For a store that isn’t on the uploaded list yet. If a later upload includes the same store number, the list version takes over.'
+      : fromList ? 'This store comes from the uploaded list. A corrected name is remembered and reused on every future upload. Other changes last until the next upload.' : 'Changes apply to certificates issued from now on.'}</p>
+    ${fromList && r.raw_name && r.raw_name !== r.display_name ? `<div class="alert info small" style="margin-bottom:12px">Name in the I-CAR system: <b>${esc(r.raw_name)}</b></div>` : ''}
     <form id="cfForm">
-      ${gold ? `
-      <div class="row"><div><label class="f" for="cf_name">Business name <span class="req">*</span></label><input id="cf_name" type="text" value="${esc(r.display_name)}" required></div>
-        <div style="flex:0 1 200px"><label class="f" for="cf_id">I-CAR ID <span class="req">*</span></label><input id="cf_id" type="text" value="${esc(r.icar_id)}" required></div></div>
+      <div class="row"><div><label class="f" for="cf_name">Business name (as printed on the certificate) <span class="req">*</span></label><input id="cf_name" type="text" value="${esc(r.display_name)}" required></div>
+        <div style="flex:0 1 160px"><label class="f" for="cf_id">Store number <span class="req">*</span></label><input id="cf_id" type="text" inputmode="numeric" value="${esc(r.icar_id)}" ${fromList ? 'readonly title="From the I-CAR system"' : ''} required></div></div>
       <div style="margin-top:12px"><label class="f" for="cf_addr">Street address</label><input id="cf_addr" type="text" value="${esc(r.address)}"></div>
       <div class="row" style="margin-top:12px"><div><label class="f" for="cf_city">City</label><input id="cf_city" type="text" value="${esc(r.city)}"></div>
-        <div style="flex:0 1 120px"><label class="f" for="cf_prov">Province</label><select id="cf_prov"><option value=""></option>${PROVINCES.map(x => `<option ${r.province === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
-        <div style="flex:0 1 160px"><label class="f" for="cf_postal">Postal code <span class="req">*</span></label><input id="cf_postal" type="text" value="${esc(r.postal_code)}" required></div></div>
-      <label class="check" style="margin-top:14px"><input type="checkbox" id="cf_alu" ${r.aluminum ? 'checked' : ''}><span><b>Gold Class – Aluminum</b> shop (gets the Aluminum certificate)</span></label>
+        <div style="flex:0 1 210px"><label class="f" for="cf_prov">Province</label><select id="cf_prov"><option value=""></option>${provOpts.map(x => `<option ${r.province === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
+        <div style="flex:0 1 140px"><label class="f" for="cf_postal">Postal code <span class="req">*</span></label><input id="cf_postal" type="text" value="${esc(r.postal_code)}" required></div></div>
+      <div class="row" style="margin-top:12px;align-items:flex-end"><div style="flex:0 1 200px"><label class="f" for="cf_exp">Gold Class expiry</label><input id="cf_exp" type="date" value="${esc(r.expires_on || '')}"></div>
+        <label class="check" style="margin-bottom:8px"><input type="checkbox" id="cf_alu" ${r.aluminum ? 'checked' : ''}><span><b>Gold Class – Aluminum</b> (gets the Aluminum certificate and letter)</span></label></div>
       <h3 class="section-head" style="margin:20px 0 8px">Contact</h3>
       <div class="row"><div><label class="f" for="cf_cname">Contact name</label><input id="cf_cname" type="text" value="${esc(r.contact_name)}"></div>
         <div><label class="f" for="cf_email">Email</label><input id="cf_email" type="email" value="${esc(r.contact_email)}"></div>
-        <div style="flex:0 1 180px"><label class="f" for="cf_phone">Phone</label><input id="cf_phone" type="tel" value="${esc(r.contact_phone)}"></div></div>`
-      : `
-      <div class="row"><div><label class="f" for="cf_first">First name <span class="req">*</span></label><input id="cf_first" type="text" value="${esc(first)}" required></div>
-        <div><label class="f" for="cf_last">Last name <span class="req">*</span></label><input id="cf_last" type="text" value="${esc(last)}" required></div>
-        <div style="flex:0 1 180px"><label class="f" for="cf_id">I-CAR ID <span class="req">*</span></label><input id="cf_id" type="text" value="${esc(r.icar_id)}" required></div></div>
-      <div class="row" style="margin-top:12px"><div><label class="f" for="cf_role">Role (shown on the certificate)</label><select id="cf_role"><option value="">—</option>${roleOpts.map(x => `<option ${curRole === x ? 'selected' : ''}>${x}</option>`).join('')}${curRole && !roleOpts.includes(curRole) ? `<option selected>${esc(curRole)}</option>` : ''}</select></div>
-        <div><label class="f" for="cf_shop">Business / employer</label><input id="cf_shop" type="text" value="${esc(r.shop_name)}"></div></div>
-      <h3 class="section-head" style="margin:20px 0 8px">Contact</h3>
-      <div class="row"><div><label class="f" for="cf_email">Email</label><input id="cf_email" type="email" value="${esc(r.contact_email)}"></div>
-        <div style="flex:0 1 200px"><label class="f" for="cf_phone">Phone</label><input id="cf_phone" type="tel" value="${esc(r.contact_phone)}"></div></div>`}
+        <div style="flex:0 1 180px"><label class="f" for="cf_phone">Phone</label><input id="cf_phone" type="tel" value="${esc(r.contact_phone)}"></div></div>
       <div id="cfMsg" style="margin-top:14px"></div>
       <div class="row" style="margin-top:6px;gap:10px">
         <button class="btn" type="submit" id="cfIssue" data-next="issue" style="flex:0 0 auto">${rec ? 'Save' : 'Save and issue now'}</button>
-        ${rec ? '' : '<button class="btn secondary" type="submit" id="cfSave" data-next="notify" style="flex:0 0 auto">Save and send them their link</button>'}
+        ${rec ? '' : '<button class="btn secondary" type="submit" id="cfSave" data-next="notify" style="flex:0 0 auto">Save and send their link</button>'}
         <button class="btn ghost" type="button" id="cfCancel" style="flex:0 0 auto">Cancel</button>
       </div>
     </form>`, true);
@@ -778,48 +748,44 @@ function openCustomerForm(program, rec = null) {
   $('#cfForm').onsubmit = async e => {
     e.preventDefault();
     const v = id => ($('#' + id)?.value || '').trim();
-    const data = gold
-      ? { icar_id: v('cf_id'), name: v('cf_name'), address: v('cf_addr'), city: v('cf_city'), province: v('cf_prov'), postal_code: v('cf_postal'), aluminum: $('#cf_alu').checked,
-          contact_name: v('cf_cname'), contact_email: v('cf_email'), contact_phone: v('cf_phone') }
-      : { icar_id: v('cf_id'), name: [v('cf_first'), v('cf_last')].filter(Boolean).join(' '), last_name: v('cf_last'), role: v('cf_role'), shop_name: v('cf_shop'),
-          contact_name: [v('cf_first'), v('cf_last')].filter(Boolean).join(' '), contact_email: v('cf_email'), contact_phone: v('cf_phone') };
+    const data = { icar_id: v('cf_id'), name: v('cf_name'), address: v('cf_addr'), city: v('cf_city'), province: v('cf_prov'), postal_code: v('cf_postal'),
+      expires_on: v('cf_exp') || null, aluminum: $('#cf_alu').checked, contact_name: v('cf_cname'), contact_email: v('cf_email'), contact_phone: v('cf_phone') };
     const btn = e.submitter || $('#cfIssue'); busy(btn, true, 'Saving…');
-    const { data: saved, error } = await sb.rpc('save_recognition', { p_program: program, p_data: data, p_id: rec?.id ?? null });
+    const { data: saved, error } = await sb.rpc('save_recognition', { p_program: 'gold_class', p_data: data, p_id: rec?.id ?? null });
     busy(btn, false);
     if (error) return $('#cfMsg').innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
     toast(rec ? 'Saved' : `${saved.display_name} added`);
-    if (ADM.tab === 'notify') { NF.program = program; loadNotify(); }
+    if (ADM.tab === 'notify') loadNotify();
     openNotify(saved, 'en', next === 'issue' ? { autoIssue: true } : {});
   };
 }
 
 /* ---------- Notify customers ---------- */
-const NF = { program: 'gold_class', q: '', status: 'not_contacted', page: 0, size: 50 };
-const CHECK_PHRASE = { gold_class: { en: 'your business postal code', fr: 'du code postal de votre entreprise' }, platinum: { en: 'your last name', fr: 'de votre nom de famille' } };
+const NF = { q: '', status: 'not_contacted', page: 0, size: 50 };
 const PHONE_SCRIPT = {
-  en: `Hi, this is {{sender}} from I-CAR Canada. I'm calling about {{name}}'s I-CAR {{program}} recognition.
+  en: `Hi, this is {{sender}} from I-CAR Canada. I'm calling about {{name}}'s I-CAR Gold Class recognition.
 
-Congratulations! You can now download your official recognition certificate and a confirmation letter, in English or French, whenever you need them.
+Congratulations! You can now download your official Gold Class certificate and a confirmation letter, in English or French, whenever you need them.
 
 Can I email you the link? [Confirm the best email address]
 
-To download it, you'll need your I-CAR ID ({{icar_id}}) and {{check}}.
+To download it, you'll need your store number ({{icar_id}}) and your business postal code.
 
-[If they'd rather not get an email] The address is {{short}}. Choose {{program}}, then enter your I-CAR ID.`,
-  fr: `Bonjour, ici {{sender}} d'I-CAR Canada. Je vous appelle au sujet de la reconnaissance {{program}} d'I-CAR de {{name}}.
+[If they'd rather not get an email] The address is {{short}}. Enter store number {{icar_id}} and your postal code.`,
+  fr: `Bonjour, ici {{sender}} d'I-CAR Canada. Je vous appelle au sujet de la reconnaissance Gold Class d'I-CAR de {{name}}.
 
-Félicitations! Vous pouvez maintenant télécharger votre certificat de reconnaissance officiel et une lettre de confirmation, en français ou en anglais, au moment qui vous convient.
+Félicitations! Vous pouvez maintenant télécharger votre certificat Gold Class officiel et une lettre de confirmation, en français ou en anglais, au moment qui vous convient.
 
 Puis-je vous envoyer le lien par courriel? [Confirmer la meilleure adresse courriel]
 
-Pour la télécharger, vous aurez besoin de votre numéro I-CAR ({{icar_id}}) et {{check}}.
+Pour le télécharger, vous aurez besoin de votre numéro d'atelier ({{icar_id}}) et du code postal de votre entreprise.
 
-[S'ils préfèrent ne pas recevoir de courriel] L'adresse est {{short}}. Choisissez {{program}}, puis entrez votre numéro I-CAR.`
+[S'ils préfèrent ne pas recevoir de courriel] L'adresse est {{short}}. Entrez le numéro d'atelier {{icar_id}} et votre code postal.`
 };
 function notifyVars(r, lang) {
-  const contact = (r.contact_name || (r.program === 'platinum' ? r.display_name : '') || '').split(/\s+/)[0] || '';
-  return { name: r.display_name, contact, icar_id: r.icar_id, program: PROGRAM[r.program][lang], check: CHECK_PHRASE[r.program][lang],
-    link: personalLink(r.program, r.icar_id, lang), short: publicUrl().replace(/^https?:\/\//, ''), sender: ADM.staff.full_name || '' };
+  const contact = (r.contact_name || '').split(/\s+/)[0] || '';
+  return { name: r.display_name, contact, icar_id: r.icar_id, program: r.aluminum ? (lang === 'fr' ? 'Gold Class – Aluminium' : 'Gold Class – Aluminum') : 'Gold Class',
+    link: personalLink(r.icar_id, lang), short: publicUrl().replace(/^https?:\/\//, ''), sender: ADM.staff.full_name || '' };
 }
 function fillMsg(t, v) { return fill(t, v).replace(/ +,/g, ',').replace(/^(Hello|Bonjour) ,/m, '$1,'); }
 
@@ -827,47 +793,48 @@ async function viewNotify() {
   view().innerHTML = `
     <div class="panel">
       <div class="spread" style="margin-bottom:16px">
-        <div><h2 style="margin:0">Notify customers</h2><p class="muted" style="margin:4px 0 0">Email or phone each recognized customer with their personal link, then log it here.</p></div>
-        <div class="row" style="flex:0 0 auto;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Recognition"><button data-np="gold_class" class="${NF.program === 'gold_class' ? 'on' : ''}">Gold Class</button><button data-np="platinum" class="${NF.program === 'platinum' ? 'on' : ''}">Platinum</button></div>
-          <button class="btn" id="nfAdd">+ Add ${NF.program === 'gold_class' ? 'shop' : 'technician'}</button></div>
+        <div><h2 style="margin:0">Notify customers</h2><p class="muted" style="margin:4px 0 0">Email or phone each Gold Class store with its personal link, then log it here.</p></div>
+        <button class="btn" id="nfAdd" style="flex:0 0 auto">+ Add a store</button>
       </div>
       <div class="filters">
-        <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, I-CAR ID, contact, email or city" value="${esc(NF.q)}"></div>
-        <div><button class="btn secondary" id="nf_x" title="Spreadsheet of the customers shown, with contact details and personal links">Download list</button></div>
+        <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, store number, city, contact, email or phone" value="${esc(NF.q)}"></div>
+        <div><button class="btn secondary" id="nf_x" title="Spreadsheet of the stores shown, with contact details and personal links">Download list</button></div>
       </div>
       <div class="chips" id="nfChips"></div>
       <div id="nfRes" style="margin-top:14px"><div class="center" style="min-height:160px"><span class="spinner" style="color:#006cb4"></span></div></div>
     </div>`;
-  $$('[data-np]').forEach(b => b.onclick = () => { NF.program = b.dataset.np; NF.page = 0; viewNotify(); });
   let timer; $('#nf_q').oninput = () => { clearTimeout(timer); timer = setTimeout(() => { NF.q = $('#nf_q').value; NF.page = 0; loadNotify(); }, 300); };
   $('#nf_x').onclick = exportMailMerge;
-  $('#nfAdd').onclick = () => openCustomerForm(NF.program);
+  $('#nfAdd').onclick = () => openCustomerForm();
   loadNotify();
 }
 let NROWS = [];
+const NF_CHIPS = [['new', 'New or renewed'], ['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no certificate yet'], ['downloaded', 'Certificate issued'], ['expired', 'Expired'], ['all', 'All']];
 async function loadNotify() {
-  const { data, error } = await sb.rpc('get_customer_list', { p_program: NF.program, p_q: NF.q, p_status: NF.status, p_limit: NF.size, p_offset: NF.page * NF.size });
+  const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: NF.size, p_offset: NF.page * NF.size });
   const res = $('#nfRes'); if (!res) return;
   if (error) return res.innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
   const s = data.summary || {};
-  $('#nfChips').innerHTML = [['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no letter yet'], ['downloaded', 'Letter downloaded'], ['all', 'All']]
+  $('#nfChips').innerHTML = NF_CHIPS.filter(([k]) => k === NF.status || k === 'all' || !['new', 'expired'].includes(k) || s[k])
     .map(([k, l]) => `<button class="chip ${NF.status === k ? 'on' : ''}" data-ns="${k}">${l}<span class="c">${(s[k === 'all' ? 'total' : k] || 0).toLocaleString()}</span></button>`).join('');
   $$('[data-ns]').forEach(b => b.onclick = () => { NF.status = b.dataset.ns; NF.page = 0; loadNotify(); });
   NROWS = data.rows || [];
-  if (!s.total) return res.innerHTML = `<div class="alert warn">Nobody is on the ${PROGRAM[NF.program].en} list yet. <a href="#" id="toLists">Upload the list</a>, or use <b>+ Add</b> to add someone by hand.</div>`, $('#toLists').onclick = e => { e.preventDefault(); goTab('lists'); };
+  if (!s.total) return res.innerHTML = `<div class="alert warn">No stores on the Gold Class list yet. <a href="#" id="toLists">Upload the list</a>, or use <b>+ Add a store</b>.</div>`, $('#toLists').onclick = e => { e.preventDefault(); goTab('lists'); };
   const pages = Math.max(1, Math.ceil((data.total || 0) / NF.size));
-  const status = r => r.letters > 0 ? `<span class="badge ok">Letter downloaded</span><div class="sub">${esc(fmtShort(r.last_letter_at))}</div>`
+  const status = r => r.letters > 0 ? `<span class="badge ok">Certificate issued</span><div class="sub">${esc(fmtShort(r.last_letter_at))}</div>`
+    : isExpired(r) ? '<span class="badge off">Expired</span>'
     : r.last_contact_at ? `<span class="badge blue">${r.last_contact_method === 'phone' ? 'Phoned' : 'Emailed'}</span><div class="sub">${esc(fmtShort(r.last_contact_at))}${r.last_contact_by ? ' · ' + esc(r.last_contact_by) : ''}${r.contacts > 1 ? ` · ${r.contacts} contacts` : ''}</div>`
     : '<span class="badge warn">Not contacted</span>';
-  res.innerHTML = NROWS.length ? `<div class="tablewrap"><table><thead><tr><th>${NF.program === 'gold_class' ? 'Business' : 'Individual'}</th><th>I-CAR ID</th><th>Contact on file</th><th>Status</th><th></th></tr></thead><tbody>
-    ${NROWS.map(r => `<tr><td><b>${esc(r.display_name)}</b>${r.aluminum ? ' <span class="badge">Aluminum</span>' : ''}${r.source === 'manual' ? ' <span class="badge blue" title="Added by hand, not from the uploaded list">Added manually</span>' : ''}<div class="sub">${esc(NF.program === 'gold_class' ? [r.city, r.province].filter(Boolean).join(', ') : [r.shop_name, roleLabel(r.role, 'en')].filter(Boolean).join(' · '))}</div></td>
+  res.innerHTML = NROWS.length ? `<div class="tablewrap"><table><thead><tr><th>Store</th><th>Store #</th><th>Expires</th><th>Contact on file</th><th>Status</th><th></th></tr></thead><tbody>
+    ${NROWS.map(r => `<tr><td><b>${esc(r.display_name)}</b> ${recBadges(r)}<div class="sub">${esc([r.city, r.province].filter(Boolean).join(', '))}</div>${r.raw_name && r.raw_name !== r.display_name ? `<div class="sub" title="Name in the I-CAR system">System: ${esc(r.raw_name)}</div>` : ''}</td>
       <td class="nowrap">${esc(r.icar_id)}</td>
+      <td class="nowrap">${esc(fmtShort(r.expires_on))}</td>
       <td>${r.contact_name ? esc(r.contact_name) + '<br>' : ''}${r.contact_email ? `<span class="sub">${esc(r.contact_email)}</span><br>` : ''}${r.contact_phone ? `<span class="sub">${esc(r.contact_phone)}</span>` : ''}${!r.contact_name && !r.contact_email && !r.contact_phone ? '<span class="sub">None</span>' : ''}</td>
       <td>${status(r)}</td><td class="nowrap"><button class="btn sm" data-notify="${r.id}">Notify</button></td></tr>`).join('')}
     </tbody></table></div>
-    <div class="pager"><span class="muted">${(data.total || 0).toLocaleString()} customers · page ${NF.page + 1} of ${pages}</span>
+    <div class="pager"><span class="muted">${(data.total || 0).toLocaleString()} stores · page ${NF.page + 1} of ${pages}</span>
       <button class="btn sm secondary" id="npPrev" ${NF.page === 0 ? 'disabled' : ''}>Previous</button><button class="btn sm secondary" id="npNext" ${NF.page + 1 >= pages ? 'disabled' : ''}>Next</button></div>`
-    : '<p class="muted">Nobody matches this filter.</p>';
+    : '<p class="muted">No stores match this filter.</p>';
   $('#npPrev') && ($('#npPrev').onclick = () => { NF.page--; loadNotify(); });
   $('#npNext') && ($('#npNext').onclick = () => { NF.page++; loadNotify(); });
   $$('[data-notify]').forEach(b => b.onclick = () => openNotify(NROWS.find(r => String(r.id) === b.dataset.notify)));
@@ -882,15 +849,15 @@ async function openNotify(r, lang = 'en', opts = {}) {
   openModal(`
     <button class="btn ghost x" id="nClose" aria-label="Close">✕</button>
     <div class="spread" style="align-items:flex-start;margin-bottom:12px">
-      <div><div>${progBadge(r.program)}</div><h2 style="margin:6px 0 0">${esc(r.display_name)}</h2><div class="muted small">I-CAR ID ${esc(r.icar_id)}${r.contact_name ? ' · Contact: ' + esc(r.contact_name) : ''}</div></div>
+      <div><div>${progBadge(r)} ${recBadges({ ...r, aluminum: false })}</div><h2 style="margin:6px 0 0">${esc(r.display_name)}</h2><div class="muted small">Store #${esc(r.icar_id)}${r.expires_on ? ' · Expires ' + esc(fmtShort(r.expires_on)) : ''}${r.contact_name ? ' · Contact: ' + esc(r.contact_name) : ''}</div>${r.raw_name && r.raw_name !== r.display_name ? `<div class="muted small">In the I-CAR system: ${esc(r.raw_name)}</div>` : ''}</div>
       <div class="lang-toggle" role="group" aria-label="Message language"><button data-nl="en" class="${lang === 'en' ? 'on' : ''}">English</button><button data-nl="fr" class="${lang === 'fr' ? 'on' : ''}">Français</button></div>
     </div>
     <div class="refbox" style="margin-bottom:18px"><div class="spread"><div><b>Issue it now</b><div class="small muted">Their ${lang === 'fr' ? 'French' : 'English'} certificate and letter, logged under your name.</div></div>
-      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn" id="nIssueMail" style="flex:0 0 auto" title="Creates an Outlook email with the PDF attached">Email it with attachment</button><button class="btn secondary" id="nIssue" style="flex:0 0 auto">Download only</button></div></div>
-      <div id="nIssueMsg"></div></div>
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn" id="nIssueMail" style="flex:0 0 auto" title="Creates an Outlook email with the PDF attached" ${isExpired(r) ? 'disabled' : ''}>Email it with attachment</button><button class="btn secondary" id="nIssue" style="flex:0 0 auto" ${isExpired(r) ? 'disabled' : ''}>Download only</button></div></div>
+      <div id="nIssueMsg">${isExpired(r) ? `<div class="alert warn" style="margin-top:12px">This store’s Gold Class expired on ${esc(fmtShort(r.expires_on))}, so it can’t get a certificate and its link won’t work. If it has renewed, use <b>Edit details</b> below to update the expiry date, or wait for next month’s list.</div>` : ''}</div></div>
     <label class="f" for="nLink">Or send them their personal link</label>
     <div class="copyrow"><input id="nLink" type="text" readonly value="${esc(v.link)}"><button class="btn secondary" id="nCopyLink">Copy link</button></div>
-    <div class="help">Opens the letter page with ${r.program === 'gold_class' ? 'their I-CAR ID filled in. They confirm with their postal code' : 'their I-CAR ID filled in. They confirm with their last name'}.</div>
+    <div class="help">Opens the certificate page with their store number filled in. They confirm with their business postal code.</div>
     <div class="grid2" style="margin-top:20px">
       <div>
         <h3 class="section-head" style="margin-bottom:8px">Email</h3>
@@ -909,8 +876,8 @@ async function openNotify(r, lang = 'en', opts = {}) {
       </div>
     </div>
     <h3 class="section-head" style="margin:24px 0 6px">History</h3><ul class="history" id="nHist"><li class="muted">Loading…</li></ul>
-    ${r.source === 'manual' ? `<div class="spread" style="margin-top:16px;border-top:1px solid var(--gray-25);padding-top:14px"><span class="small muted">Added by hand${r.added_at ? ' on ' + esc(fmtShort(r.added_at)) : ''}.</span>
-      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn sm secondary" id="nEdit">Edit details</button>${ADM.staff.role === 'admin' ? '<button class="btn sm danger" id="nRemove">Remove</button>' : ''}</div></div>` : ''}`, true);
+    <div class="spread" style="margin-top:16px;border-top:1px solid var(--gray-25);padding-top:14px"><span class="small muted">${r.source === 'manual' ? `Added by hand${r.added_at ? ' on ' + esc(fmtShort(r.added_at)) : ''}.` : 'From the uploaded Gold Class list. Correct the name here and it’s remembered on future uploads.'}</span>
+      <div class="row" style="flex:0 0 auto;gap:8px"><button class="btn sm secondary" id="nEdit">Edit details</button>${r.source === 'manual' && ADM.staff.role === 'admin' ? '<button class="btn sm danger" id="nRemove">Remove</button>' : ''}</div></div>`, true);
   $('#nClose').onclick = closeModal;
   $$('[data-nl]').forEach(b => b.onclick = () => openNotify(r, b.dataset.nl));
   const issue = async btn => {
@@ -951,7 +918,7 @@ async function openNotify(r, lang = 'en', opts = {}) {
     } catch (err) { toast(err.message, 'err'); busy(btn, false); }
   };
   if (opts.autoIssue) issue($('#nIssue'));
-  $('#nEdit') && ($('#nEdit').onclick = () => openCustomerForm(r.program, r));
+  $('#nEdit') && ($('#nEdit').onclick = () => openCustomerForm(r));
   $('#nRemove') && ($('#nRemove').onclick = async e => {
     const b = e.currentTarget;
     if (b.dataset.confirm !== '1') {
@@ -1060,62 +1027,62 @@ async function exportMailMerge(e) {
   const btn = e.currentTarget; busy(btn, true, 'Exporting…');
   try {
     const all = [];
-    for (let i = 0; i < 40; i++) { const { data, error } = await sb.rpc('get_customer_list', { p_program: NF.program, p_q: NF.q, p_status: NF.status, p_limit: 500, p_offset: i * 500 }); if (error) throw error; all.push(...data.rows); if (data.rows.length < 500) break; }
-    csvDownload(all, [['display_name', 'Name'], ['icar_id', 'I-CAR ID'], ['contact_name', 'Contact name'], ['contact_email', 'Email'], ['contact_phone', 'Phone'], ['city', 'City'], ['province', 'Province'],
-      ['link_en', 'Personal link (EN)', r => personalLink(r.program, r.icar_id, 'en')], ['link_fr', 'Personal link (FR)', r => personalLink(r.program, r.icar_id, 'fr')],
-      ['status', 'Status', r => r.letters > 0 ? 'Letter downloaded' : r.last_contact_at ? 'Contacted' : 'Not contacted']],
-      `icar-${PROGRAM[NF.program].slug.toLowerCase()}-customers-${NF.status}-${new Date().toISOString().slice(0, 10)}.csv`);
-    toast(`Exported ${all.length.toLocaleString()} customers`);
+    for (let i = 0; i < 40; i++) { const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: 500, p_offset: i * 500 }); if (error) throw error; all.push(...data.rows); if (data.rows.length < 500) break; }
+    csvDownload(all, [['icar_id', 'Store number'], ['display_name', 'Name on certificate'], ['raw_name', 'Name in I-CAR system'], ['aluminum', 'Aluminum', r => r.aluminum ? 'Yes' : ''],
+      ['expires_on', 'Expires'], ['contact_name', 'Contact name'], ['contact_email', 'Email'], ['contact_phone', 'Phone'], ['address', 'Address'], ['city', 'City'], ['province', 'Province'], ['postal_code', 'Postal code'],
+      ['link_en', 'Personal link (EN)', r => personalLink(r.icar_id, 'en')], ['link_fr', 'Personal link (FR)', r => personalLink(r.icar_id, 'fr')],
+      ['change', 'This upload', r => r.change_status === 'new' ? 'New' : r.change_status === 'renewed' ? 'Renewed' : ''],
+      ['status', 'Status', r => r.letters > 0 ? 'Certificate issued' : isExpired(r) ? 'Expired' : r.last_contact_at ? 'Contacted' : 'Not contacted']],
+      `icar-gold-class-stores-${NF.status}-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast(`Exported ${all.length.toLocaleString()} stores`);
   } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
 }
 
-/* ---------- Recognition lists ---------- */
-const FIELDS = {
-  gold_class: [
-    { k: 'icar_id', label: 'I-CAR ID', req: true, rx: /(i-?car|shop|business|location|facility|account).*(id|#|no\b|num)|^id$/i },
-    { k: 'name', label: 'Business name', req: true, rx: /(shop|business|company|location|facility|account).*name|^name$|^shop$|^business$/i },
-    { k: 'address', label: 'Street address', rx: /address|street/i },
-    { k: 'city', label: 'City', rx: /city|town|ville/i },
-    { k: 'province', label: 'Province', rx: /prov|state|region/i },
-    { k: 'postal_code', label: 'Postal code', req: true, rx: /postal|zip|code postal/i, note: 'Customers confirm with this' },
-    { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i },
-    { k: 'aluminum', label: 'Aluminum designation', rx: /alumin/i, note: 'Yes / X / 1 marks Gold Class – Aluminum' },
-    { k: 'contact_name', label: 'Contact name', rx: /contact.*name|owner|manager|primary.*contact|^contact$/i, note: 'For notifying them' },
-    { k: 'contact_email', label: 'Contact email', rx: /e-?mail|courriel/i, note: 'For notifying them' },
-    { k: 'contact_phone', label: 'Contact phone', rx: /phone|tel|mobile|cell/i, note: 'For notifying them' }
-  ],
-  platinum: [
-    { k: 'icar_id', label: 'I-CAR ID', req: true, rx: /(i-?car|person|individual|student|member|user).*(id|#|no\b|num)|^id$/i },
-    { k: 'name', label: 'Full name', rx: /full.?name|^name$|person.?name|individual/i, note: 'Or map first + last name' },
-    { k: 'first_name', label: 'First name', rx: /first|given|prénom|prenom/i },
-    { k: 'last_name', label: 'Last name', rx: /last|surname|family|nom de famille|^nom$/i, note: 'Customers confirm with this' },
-    { k: 'shop_name', label: 'Business / employer', rx: /shop|employer|company|business|location|facility/i },
-    { k: 'role', label: 'Role', rx: /role|rôle|position|designation/i, note: 'Shown on the certificate' },
-    { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i },
-    { k: 'contact_email', label: 'Email', rx: /e-?mail|courriel/i, note: 'For notifying them' },
-    { k: 'contact_phone', label: 'Phone', rx: /phone|tel|mobile|cell/i, note: 'For notifying them' }
-  ]
-};
-let UPLOAD = null;
+/* ---------- Gold Class list (monthly export from the I-CAR system) ---------- */
+/* Shop names: drop anything in brackets, except "(CarrXpert)", which stays on. "(CarrXpert NA)" is dropped. */
+function cleanStoreName(raw) {
+  let s = String(raw || '').replace(/\s+/g, ' ').trim();
+  let out = '', depth = 0, buf = '';
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === '(') { if (depth === 0) buf = ''; depth++; buf += c; continue; }
+    if (depth > 0) { buf += c; if (c === ')') { depth--; if (depth === 0) { if (/^\(\s*carr\s*xpert\s*\)$/i.test(buf)) out += ' (CarrXpert)'; buf = ''; } } continue; }
+    out += c;
+  }
+  return out.replace(/\s+/g, ' ').replace(/\s+([,.;:])/g, '$1').replace(/[\s\-–\/,]+$/g, '').replace(/^[\s\-–\/,]+/g, '').trim();
+}
+const FIELDS = [
+  { k: 'icar_id', label: 'Store number', req: true, rx: /^(store\s*)?(number|no\.?|#)$|store.*(id|#|no\b|num)|(i-?car|shop|business|location|facility|account).*(id|#|no\b|num)|^id$/i, note: 'Customers confirm with this' },
+  { k: 'name', label: 'Name', req: true, rx: /^name$|(shop|business|company|store|location|facility|account).*name/i, note: 'Brackets are removed automatically, except (CarrXpert)' },
+  { k: 'postal_code', label: 'Postal code', req: true, rx: /postal|zip|code postal/i, note: 'Customers confirm with this' },
+  { k: 'status', label: 'Gold Class level', rx: /^gold\s*class$|level|status|designation|type|alumin/i, note: '“Gold Class - Aluminum” gets the Aluminum certificate' },
+  { k: 'expires_on', label: 'Expiration', rx: /expir|valid|renew/i, note: 'Expired stores can’t download' },
+  { k: 'address', label: 'Address', rx: /address|street/i },
+  { k: 'city', label: 'City', rx: /^city|town|ville/i },
+  { k: 'province', label: 'Province', rx: /prov|state|region/i },
+  { k: 'contact_phone', label: 'Phone', rx: /phone|tel|mobile|cell/i, note: 'For notifying them' },
+  { k: 'contact_email', label: 'Email', rx: /e-?mail|courriel/i, note: 'For notifying them' },
+  { k: 'contact_name', label: 'Contact name', rx: /contact.*name|owner|manager|primary.*contact|^contact$/i }
+];
+let UPLOAD = null, LAST_RESULT = null;
 async function viewLists() {
   loading();
-  const [{ data: st }, { data: hist }, { count: mGold }, { count: mPlat }] = await Promise.all([sb.rpc('get_dashboard_stats'),
-    sb.from('list_uploads').select('id, program, filename, row_count, uploaded_at, is_active, staff:uploaded_by(full_name,email)').order('uploaded_at', { ascending: false }).limit(20),
-    sb.from('recognitions').select('id', { count: 'exact', head: true }).eq('program', 'gold_class').eq('source', 'manual'),
-    sb.from('recognitions').select('id', { count: 'exact', head: true }).eq('program', 'platinum').eq('source', 'manual')]);
-  const manual = { gold_class: mGold || 0, platinum: mPlat || 0 };
-  const cur = p => (st?.lists || []).find(l => l.program === p);
-  const card = p => { const l = cur(p); return `<div class="panel"><h2 style="font-size:24px">${progBadge(p)} list</h2>
-    ${l ? `<p style="margin:0"><b>${l.row_count.toLocaleString()}</b> records · ${esc(l.filename || '')}<br><span class="small muted">Uploaded ${esc(fmtDateTime(l.uploaded_at))}</span></p>` : '<div class="alert warn">No list uploaded yet.</div>'}
-    ${manual[p] ? `<p style="margin:8px 0 0"><b>${manual[p].toLocaleString()}</b> added manually</p>` : ''}
-    <p class="small muted" style="margin:12px 0">Upload the latest export from the I-CAR system (Excel or CSV). It <b>replaces</b> the uploaded ${PROGRAM[p].en} list. People added manually are kept, unless the new list includes their I-CAR ID. Letters and contact history are always kept. Include email and phone columns if you have them.</p>
-    <div class="row" style="gap:8px"><label class="btn secondary" style="flex:0 0 auto">Choose file…<input type="file" accept=".csv,.xlsx,.xls,.txt" data-prog="${p}" hidden></label><button class="btn ghost" data-add="${p}" style="flex:0 0 auto">+ Add one ${p === 'gold_class' ? 'shop' : 'technician'}</button></div></div>`; };
-  view().innerHTML = `<div id="uploadArea"></div><div class="grid2">${card('gold_class')}${card('platinum')}</div>
-    <div class="panel"><h3>Upload history</h3>${hist?.length ? `<div class="tablewrap"><table><thead><tr><th>Uploaded</th><th>List</th><th>File</th><th>Records</th><th>By</th><th>Status</th></tr></thead><tbody>
-      ${hist.map(h => `<tr><td class="nowrap">${esc(fmtDateTime(h.uploaded_at))}</td><td>${progBadge(h.program)}</td><td>${esc(h.filename)}</td><td>${h.row_count.toLocaleString()}</td><td>${esc(h.staff?.full_name || h.staff?.email || '')}</td><td>${h.is_active ? '<span class="badge ok">Current</span>' : '<span class="badge">Replaced</span>'}</td></tr>`).join('')}
+  const [{ data: st }, { data: hist }, { count: manual }] = await Promise.all([sb.rpc('get_dashboard_stats'),
+    sb.from('list_uploads').select('id, program, filename, row_count, uploaded_at, is_active, staff:uploaded_by(full_name,email)').eq('program', 'gold_class').order('uploaded_at', { ascending: false }).limit(20),
+    sb.from('recognitions').select('id', { count: 'exact', head: true }).eq('program', 'gold_class').eq('source', 'manual')]);
+  const l = (st?.lists || []).find(x => x.program === 'gold_class');
+  view().innerHTML = `<div id="uploadArea">${LAST_RESULT ? resultPanel(LAST_RESULT) : ''}</div>
+    <div class="panel"><div class="spread"><h2 style="font-size:24px;margin:0">Gold Class list</h2></div>
+      ${l ? `<p style="margin:10px 0 0"><b>${l.row_count.toLocaleString()}</b> stores · ${esc(l.filename || '')}<br><span class="small muted">Uploaded ${esc(fmtDateTime(l.uploaded_at))}</span></p>` : '<div class="alert warn" style="margin-top:10px">No list uploaded yet.</div>'}
+      ${manual ? `<p style="margin:8px 0 0"><b>${manual.toLocaleString()}</b> added manually</p>` : ''}
+      <p class="small muted" style="margin:12px 0">Each month, upload the <b>Active Gold Stores</b> export from the I-CAR system (Excel or CSV), as it comes. The app reads the <b>Current</b> sheet, cleans the shop names, flags Aluminum stores and expiry dates, and shows which stores are new or renewed so the team can notify them. Name corrections, stores added manually, certificates and contact history are all kept.</p>
+      <div class="row" style="gap:8px"><label class="btn" style="flex:0 0 auto">Upload this month’s list…<input type="file" accept=".csv,.xlsx,.xls,.txt" id="upFile" hidden></label><button class="btn ghost" data-add="1" style="flex:0 0 auto">+ Add one store</button></div></div>
+    <div class="panel"><h3>Upload history</h3>${hist?.length ? `<div class="tablewrap"><table><thead><tr><th>Uploaded</th><th>File</th><th>Stores</th><th>By</th><th>Status</th></tr></thead><tbody>
+      ${hist.map(h => `<tr><td class="nowrap">${esc(fmtDateTime(h.uploaded_at))}</td><td>${esc(h.filename)}</td><td>${h.row_count.toLocaleString()}</td><td>${esc(h.staff?.full_name || h.staff?.email || '')}</td><td>${h.is_active ? '<span class="badge ok">Current</span>' : '<span class="badge">Replaced</span>'}</td></tr>`).join('')}
     </tbody></table></div>` : '<p class="muted">No uploads yet.</p>'}</div>`;
-  $$('input[type=file][data-prog]').forEach(inp => inp.onchange = () => inp.files[0] && startUpload(inp.dataset.prog, inp.files[0]));
-  $$('[data-add]').forEach(b => b.onclick = () => openCustomerForm(b.dataset.add));
+  $('#upFile').onchange = e => e.target.files[0] && startUpload(e.target.files[0]);
+  $$('[data-add]').forEach(b => b.onclick = () => openCustomerForm());
+  bindResult();
 }
 function excelDateToISO(v) {
   if (v === '' || v == null) return '';
@@ -1124,13 +1091,14 @@ function excelDateToISO(v) {
   const s = String(v).trim(); if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   const d = new Date(s); return isNaN(d) ? '' : new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
-async function startUpload(program, file) {
-  const area = $('#uploadArea');
+async function startUpload(file) {
+  const area = $('#uploadArea'); LAST_RESULT = null;
   area.innerHTML = `<div class="panel" style="margin-bottom:var(--space-md)"><span class="spinner"></span> Reading ${esc(file.name)}…</div>`;
   try {
     await loadScript(XLSX_SRC);
     const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
-    UPLOAD = { program, file: file.name, wb, sheet: wb.SheetNames[0] };
+    const sheet = wb.SheetNames.find(s => /^current$/i.test(s.trim())) || wb.SheetNames.find(s => !/hist/i.test(s)) || wb.SheetNames[0];
+    UPLOAD = { file: file.name, wb, sheet, showMap: false };
     readSheet(); renderMapping();
   } catch (e) { area.innerHTML = `<div class="alert err" style="margin-bottom:var(--space-md)">Couldn’t read that file: ${esc(e.message)}</div>`; }
 }
@@ -1139,57 +1107,82 @@ function readSheet() {
   UPLOAD.rows = rows;
   UPLOAD.cols = rows.length ? Object.keys(rows.reduce((a, r) => Object.assign(a, r), {})) : [];
   const used = new Set(); UPLOAD.map = {};
-  for (const f of FIELDS[UPLOAD.program]) { const hit = UPLOAD.cols.find(c => !used.has(c) && f.rx.test(c.trim())); if (hit) { UPLOAD.map[f.k] = hit; used.add(hit); } }
+  for (const f of FIELDS) { const hit = UPLOAD.cols.find(c => !used.has(c) && f.rx.test(c.trim())); if (hit) { UPLOAD.map[f.k] = hit; used.add(hit); } }
 }
 function buildRows() {
-  const m = UPLOAD.map, P = UPLOAD.program, get = (r, k) => (m[k] ? String(r[m[k]] ?? '').trim() : '');
+  const m = UPLOAD.map, get = (r, k) => (m[k] ? String(r[m[k]] ?? '').replace(/\s+/g, ' ').trim() : '');
   return UPLOAD.rows.map(r => {
-    const first = get(r, 'first_name'), last = get(r, 'last_name');
-    const name = get(r, 'name') || [first, last].filter(Boolean).join(' ');
-    const o = { icar_id: get(r, 'icar_id'), name, recognition_date: m.recognition_date ? excelDateToISO(r[m.recognition_date]) : '', contact_email: get(r, 'contact_email'), contact_phone: get(r, 'contact_phone') };
-    if (P === 'gold_class') Object.assign(o, { address: get(r, 'address'), city: get(r, 'city'), province: get(r, 'province'), postal_code: get(r, 'postal_code'), contact_name: get(r, 'contact_name'), aluminum: get(r, 'aluminum') });
-    else Object.assign(o, { last_name: last, shop_name: get(r, 'shop_name'), contact_name: name, role: get(r, 'role') });
-    return o;
+    const raw = get(r, 'name'), status = get(r, 'status');
+    return { icar_id: get(r, 'icar_id').replace(/\.0+$/, ''), name: cleanStoreName(raw), raw_name: raw, address: get(r, 'address'), city: get(r, 'city'), province: get(r, 'province'),
+      postal_code: get(r, 'postal_code').toUpperCase(), expires_on: m.expires_on ? excelDateToISO(r[m.expires_on]) : '', aluminum: /alumin/i.test(status) ? 'yes' : '',
+      contact_name: get(r, 'contact_name'), contact_email: get(r, 'contact_email'), contact_phone: get(r, 'contact_phone') };
   });
 }
-const isYes = v => /^(true|yes|y|oui|o|x|1|aluminum|aluminium)$/i.test(String(v || '').trim());
 const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 function renderMapping() {
-  const U = UPLOAD, P = U.program, fields = FIELDS[P];
+  const U = UPLOAD;
   const rows = buildRows(), valid = rows.filter(r => r.icar_id && r.name);
-  const noCheck = P === 'gold_class' ? valid.filter(r => !r.postal_code).length : valid.filter(r => !r.last_name && !/\s/.test(r.name)).length;
+  const ids = new Set(valid.map(r => r.icar_id.toUpperCase()));
+  const dupes = valid.length - ids.size;
+  const noPostal = valid.filter(r => !r.postal_code).length;
+  const alu = valid.filter(r => r.aluminum).length;
+  const today = todayISO(), expired = valid.filter(r => r.expires_on && r.expires_on < today);
+  const cleaned = valid.filter(r => r.raw_name !== r.name);
   const noContact = valid.filter(r => !r.contact_email && !r.contact_phone).length;
-  const missingReq = !U.map.icar_id || (P === 'gold_class' ? !U.map.name || !U.map.postal_code : !(U.map.name || (U.map.first_name && U.map.last_name)));
+  const missingReq = FIELDS.some(f => f.req && !U.map[f.k]);
+  const showMap = U.showMap || missingReq;
   const opt = k => `<option value="">— not in file —</option>` + U.cols.map(c => `<option ${U.map[k] === c ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  const matched = FIELDS.filter(f => U.map[f.k]).map(f => f.label);
   $('#uploadArea').innerHTML = `<div class="panel" style="margin-bottom:var(--space-md)">
-    <div class="spread"><h2 style="margin:0;font-size:24px">Update the ${progBadge(P)} list</h2><button class="btn sm secondary" id="upCancel">Cancel</button></div>
+    <div class="spread"><h2 style="margin:0;font-size:24px">Update the Gold Class list</h2><button class="btn sm secondary" id="upCancel">Cancel</button></div>
     <p class="muted" style="margin:4px 0 16px">${esc(U.file)} · ${plural(U.rows.length, 'row', 'rows')}${U.wb.SheetNames.length > 1 ? ` · sheet <select id="upSheet" style="width:auto;min-height:34px;padding:4px 8px">${U.wb.SheetNames.map(s => `<option ${s === U.sheet ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>` : ''}</p>
-    <h3 class="section-head"><span class="n">1</span>Match the columns</h3>
-    <div class="mapgrid">${fields.map(f => `<label for="map_${f.k}"><b>${f.label}</b>${f.req ? ' <span class="req">*</span>' : ''}${f.note ? `<div class="help" style="margin:0">${f.note}</div>` : ''}</label><select id="map_${f.k}" data-map="${f.k}">${opt(f.k)}</select>`).join('')}</div>
-    <h3 class="section-head" style="margin-top:24px"><span class="n">2</span>Check the result</h3>
+    ${showMap ? `<h3 class="section-head">Match the columns</h3>
+      ${missingReq ? '<div class="alert warn" style="margin-bottom:10px">Some required columns (*) weren’t recognised. Pick them below.</div>' : ''}
+      <div class="mapgrid">${FIELDS.map(f => `<label for="map_${f.k}"><b>${f.label}</b>${f.req ? ' <span class="req">*</span>' : ''}${f.note ? `<div class="help" style="margin:0">${f.note}</div>` : ''}</label><select id="map_${f.k}" data-map="${f.k}">${opt(f.k)}</select>`).join('')}</div>`
+      : `<div class="alert ok small">Columns recognised automatically: ${esc(matched.join(', '))}. <a href="#" id="upShowMap">Change</a></div>`}
+    <h3 class="section-head" style="margin-top:20px">Check the result</h3>
     <div class="row" style="gap:8px">
-      <div class="alert ${valid.length ? 'ok' : 'err'}"><b>${plural(valid.length, 'record', 'records')}</b> will be loaded</div>
-      ${rows.length - valid.length ? `<div class="alert warn"><b>${plural(rows.length - valid.length, 'row', 'rows')}</b> skipped (no I-CAR ID or name)</div>` : ''}
-      ${noCheck ? `<div class="alert warn"><b>${noCheck.toLocaleString()}</b> ${noCheck === 1 ? 'has' : 'have'} no ${P === 'gold_class' ? 'postal code' : 'last name'}, so they can’t download a letter</div>` : ''}
-      ${noContact ? `<div class="alert info"><b>${noContact.toLocaleString()}</b> ${noContact === 1 ? 'has' : 'have'} no email or phone to notify them with</div>` : ''}
+      <div class="alert ${valid.length ? 'ok' : 'err'}"><b>${plural(ids.size, 'store', 'stores')}</b> will be loaded${alu ? `, including <b>${alu.toLocaleString()}</b> Aluminum` : ''}</div>
+      ${rows.length - valid.length ? `<div class="alert warn"><b>${plural(rows.length - valid.length, 'row', 'rows')}</b> skipped (no store number or name)</div>` : ''}
+      ${dupes ? `<div class="alert info"><b>${dupes.toLocaleString()}</b> repeated store ${dupes === 1 ? 'number' : 'numbers'} merged</div>` : ''}
+      ${noPostal ? `<div class="alert warn"><b>${noPostal.toLocaleString()}</b> ${noPostal === 1 ? 'has' : 'have'} no postal code, so they can’t download</div>` : ''}
+      ${expired.length ? `<div class="alert warn"><b>${expired.length.toLocaleString()}</b> already expired, so they can’t download until they renew</div>` : ''}
+      ${noContact ? `<div class="alert info"><b>${noContact.toLocaleString()}</b> ${noContact === 1 ? 'has' : 'have'} no email or phone</div>` : ''}
     </div>
-    <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>I-CAR ID</th><th>Name</th>${P === 'gold_class' ? '<th>Postal code</th><th>Aluminum</th>' : '<th>Last name</th><th>Role</th>'}<th>Email</th><th>Phone</th></tr></thead><tbody>
-      ${valid.slice(0, 5).map(r => `<tr><td>${esc(r.icar_id)}</td><td>${esc(r.name)}</td><td>${esc(P === 'gold_class' ? r.postal_code : (r.last_name || r.name.split(/\s+/).pop()))}</td><td>${P === 'gold_class' ? (isYes(r.aluminum) ? 'Yes' : '') : esc(roleLabel(r.role, 'en'))}</td><td>${esc(r.contact_email)}</td><td>${esc(r.contact_phone)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Match the required columns to see a preview.</td></tr>'}
+    ${cleaned.length ? `<details style="margin-top:12px"><summary><b>${plural(cleaned.length, 'shop name', 'shop names')}</b> tidied for the certificate (brackets removed; (CarrXpert) kept)</summary>
+      <div class="tablewrap" style="margin-top:8px;max-height:280px;overflow:auto"><table><thead><tr><th>Store #</th><th>In the I-CAR system</th><th>On the certificate</th></tr></thead><tbody>
+      ${cleaned.map(r => `<tr><td>${esc(r.icar_id)}</td><td class="muted">${esc(r.raw_name)}</td><td><b>${esc(r.name)}</b></td></tr>`).join('')}</tbody></table></div>
+      <p class="help">To change a name, edit the store after uploading (Notify customers → Notify → Edit details). The correction is remembered on future uploads.</p></details>` : ''}
+    <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>Store #</th><th>Name on certificate</th><th>Postal code</th><th>Level</th><th>Expires</th><th>Phone</th></tr></thead><tbody>
+      ${valid.slice(0, 5).map(r => `<tr><td>${esc(r.icar_id)}</td><td>${esc(r.name)}</td><td>${esc(r.postal_code)}</td><td>${r.aluminum ? 'Aluminum' : 'Gold Class'}</td><td class="nowrap">${esc(fmtShort(r.expires_on))}</td><td>${esc(r.contact_phone)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Match the required columns to see a preview.</td></tr>'}
     </tbody></table></div>
-    <h3 class="section-head" style="margin-top:24px"><span class="n">3</span>Replace the list</h3>
-    ${missingReq ? '<div class="alert err" style="margin-bottom:10px">Match the required columns (*) first.</div>' : ''}
-    <button class="btn" id="upGo" ${missingReq || !valid.length ? 'disabled' : ''}>Replace the ${PROGRAM[P].en} list with ${plural(valid.length, 'record', 'records')}</button>
+    <button class="btn" id="upGo" style="margin-top:18px" ${missingReq || !valid.length ? 'disabled' : ''}>Replace the Gold Class list with ${plural(ids.size, 'store', 'stores')}</button>
   </div>`;
   $('#upCancel').onclick = () => { UPLOAD = null; $('#uploadArea').innerHTML = ''; };
+  $('#upShowMap') && ($('#upShowMap').onclick = ev => { ev.preventDefault(); U.showMap = true; renderMapping(); });
   $('#upSheet') && ($('#upSheet').onchange = e => { U.sheet = e.target.value; readSheet(); renderMapping(); });
   $$('[data-map]').forEach(s => s.onchange = () => { U.map[s.dataset.map] = s.value || undefined; renderMapping(); });
   $('#upGo').onclick = async e => {
     busy(e.currentTarget, true, 'Uploading…');
-    const { data, error } = await sb.rpc('replace_recognition_list', { p_program: P, p_filename: U.file, p_rows: valid });
+    const { data, error } = await sb.rpc('replace_recognition_list', { p_program: 'gold_class', p_filename: U.file, p_rows: valid });
     if (error) { busy(e.currentTarget, false); return toast(error.message, 'err'); }
-    toast(`${PROGRAM[P].en} list updated: ${data.inserted.toLocaleString()} records${data.merged_manual ? ` (${data.merged_manual} manual ${data.merged_manual === 1 ? 'entry' : 'entries'} now on the list)` : ''}`);
-    UPLOAD = null; viewLists();
+    toast(`Gold Class list updated: ${data.inserted.toLocaleString()} stores`);
+    LAST_RESULT = { ...data, file: U.file }; UPLOAD = null; viewLists();
   };
+}
+function resultPanel(d) {
+  return `<div class="panel" style="margin-bottom:var(--space-md)"><div class="spread"><h2 style="margin:0;font-size:24px">List updated</h2><button class="btn sm secondary" id="resClose">Close</button></div>
+    <p class="muted" style="margin:4px 0 14px">${esc(d.file)} · ${plural(d.inserted, 'store', 'stores')} loaded${d.merged_manual ? ` · ${plural(d.merged_manual, 'manually added store is', 'manually added stores are')} now on the list` : ''}</p>
+    <div class="stats" style="margin-bottom:12px">
+      <div class="stat alt"><div class="n">${(d.new || 0).toLocaleString()}</div><div class="l">New stores</div></div>
+      <div class="stat alt"><div class="n">${(d.renewed || 0).toLocaleString()}</div><div class="l">Renewed (new expiry date)</div></div>
+      <div class="stat"><div class="n">${(d.dropped || 0).toLocaleString()}</div><div class="l">No longer on the list</div></div>
+    </div>
+    ${d.new || d.renewed ? '<button class="btn" id="resNotify">Notify the new and renewed stores</button>' : '<p class="small muted" style="margin:0">On a first upload every store counts as existing. From next month, new and renewed stores are flagged here.</p>'}</div>`;
+}
+function bindResult() {
+  $('#resClose') && ($('#resClose').onclick = () => { LAST_RESULT = null; $('#uploadArea').innerHTML = ''; });
+  $('#resNotify') && ($('#resNotify').onclick = () => { LAST_RESULT = null; NF.status = 'new'; NF.page = 0; NF.q = ''; goTab('notify'); });
 }
 
 /* ---------- Letters issued ---------- */
@@ -1205,8 +1198,8 @@ function lettersQuery(sel = '*', opts = {}) {
   return q;
 }
 function lettersTable(rows, actions = true) {
-  return `<table><thead><tr><th>Downloaded</th><th>Letter for</th><th>I-CAR ID</th><th>Requested by</th><th>Email opt-in</th><th>Lang.</th><th>Reference</th>${actions ? '<th></th>' : ''}</tr></thead><tbody>
-    ${rows.map(r => `<tr><td class="nowrap">${esc(fmtDateTime(r.created_at))}</td><td>${progBadge(r.program)}<div>${esc(r.recipient_name)}</div></td><td>${esc(r.icar_id)}</td>
+  return `<table><thead><tr><th>Issued</th><th>Certificate for</th><th>Store #</th><th>Requested by</th><th>Email opt-in</th><th>Lang.</th><th>Reference</th>${actions ? '<th></th>' : ''}</tr></thead><tbody>
+    ${rows.map(r => `<tr><td class="nowrap">${esc(fmtDateTime(r.created_at))}</td><td>${esc(r.recipient_name)}</td><td>${esc(r.icar_id)}</td>
       <td>${r.issued_by ? `${esc(r.requester_name)} <span class="badge blue">Staff</span>` : `${esc(r.requester_name)}<div class="sub"><a href="mailto:${esc(r.requester_email)}">${esc(r.requester_email)}</a></div>`}</td>
       <td>${r.marketing_consent ? '<span class="badge ok">Yes</span>' : '<span class="badge">No</span>'}</td><td>${esc(r.language.toUpperCase())}</td>
       <td class="mono nowrap">${esc(r.verification_code)}</td>${actions ? `<td><button class="btn sm secondary" data-pdf="${r.id}" title="Certificate and letter">PDF</button></td>` : ''}</tr>`).join('')}
@@ -1215,8 +1208,7 @@ function lettersTable(rows, actions = true) {
 async function viewLetters() {
   view().innerHTML = `<div class="panel">
     <div class="filters">
-      <div class="grow"><label class="f" for="lf_q">Search</label><input id="lf_q" type="search" placeholder="Name, email, I-CAR ID or reference" value="${esc(LF.q)}"></div>
-      <div><label class="f" for="lf_p">Recognition</label><select id="lf_p"><option value="">All</option><option value="gold_class" ${LF.program === 'gold_class' ? 'selected' : ''}>Gold Class</option><option value="platinum" ${LF.program === 'platinum' ? 'selected' : ''}>Platinum</option></select></div>
+      <div class="grow"><label class="f" for="lf_q">Search</label><input id="lf_q" type="search" placeholder="Name, email, store number or reference" value="${esc(LF.q)}"></div>
       <div><label class="f" for="lf_c">Email opt-in</label><select id="lf_c"><option value="">All</option><option value="yes" ${LF.consent === 'yes' ? 'selected' : ''}>Opted in</option><option value="no" ${LF.consent === 'no' ? 'selected' : ''}>Not opted in</option></select></div>
       <div><label class="f" for="lf_f">From</label><input id="lf_f" type="date" value="${esc(LF.from)}"></div>
       <div><label class="f" for="lf_t">To</label><input id="lf_t" type="date" value="${esc(LF.to)}"></div>
@@ -1224,9 +1216,9 @@ async function viewLetters() {
     </div>
     <div id="lfRes"><div class="center" style="min-height:160px"><span class="spinner" style="color:#006cb4"></span></div></div></div>`;
   let timer;
-  const refilter = () => { LF.q = $('#lf_q').value; LF.program = $('#lf_p').value; LF.consent = $('#lf_c').value; LF.from = $('#lf_f').value; LF.to = $('#lf_t').value; LF.page = 0; loadLetters(); };
+  const refilter = () => { LF.q = $('#lf_q').value; LF.consent = $('#lf_c').value; LF.from = $('#lf_f').value; LF.to = $('#lf_t').value; LF.page = 0; loadLetters(); };
   $('#lf_q').oninput = () => { clearTimeout(timer); timer = setTimeout(refilter, 300); };
-  ['#lf_p', '#lf_c', '#lf_f', '#lf_t'].forEach(s => $(s).onchange = refilter);
+  ['#lf_c', '#lf_f', '#lf_t'].forEach(s => $(s).onchange = refilter);
   $('#lf_x').onclick = exportLetters;
   loadLetters();
 }
@@ -1251,8 +1243,8 @@ async function staffPdf(r, btn) {
   try {
     let rec = null;
     if (r.recognition_id) ({ data: rec } = await sb.from('recognitions').select('*').eq('id', r.recognition_id).maybeSingle());
-    const L = { program: r.program, language: r.language, name: r.recipient_name, icar_id: r.icar_id, code: r.verification_code, issued_at: r.created_at,
-      shop_name: rec?.shop_name, address: rec?.address, city: rec?.city, province: rec?.province, postal_code: rec?.postal_code, recognition_date: rec?.recognition_date, aluminum: rec?.aluminum, role: rec?.role };
+    const L = { language: r.language, name: r.recipient_name, icar_id: r.icar_id, code: r.verification_code, issued_at: r.created_at,
+      address: rec?.address, city: rec?.city, province: rec?.province, postal_code: rec?.postal_code, expires_on: rec?.expires_on, aluminum: rec?.aluminum };
     (await buildLetterPdf(L, await loadContent(true))).save(letterFilename(L));
   } catch (e) { toast(e.message, 'err'); } finally { busy(btn, false); }
 }
@@ -1261,7 +1253,7 @@ async function exportLetters(e) {
   try {
     const all = [];
     for (let i = 0; i < 100; i++) { const { data, error } = await lettersQuery('*').range(i * 1000, i * 1000 + 999); if (error) throw error; all.push(...data); if (data.length < 1000) break; }
-    csvDownload(all, [['created_at', 'Downloaded', r => new Date(r.created_at).toISOString()], ['program', 'Recognition', r => PROGRAM[r.program]?.en], ['recipient_name', 'Letter for'], ['icar_id', 'I-CAR ID'],
+    csvDownload(all, [['created_at', 'Downloaded', r => new Date(r.created_at).toISOString()], ['recipient_name', 'Certificate for'], ['icar_id', 'Store number'],
       ['requester_name', 'Requested by'], ['requester_email', 'Email'], ['marketing_consent', 'Email opt-in', r => r.marketing_consent ? 'Yes' : 'No'], ['language', 'Language'], ['verification_code', 'Reference']],
       `icar-recognition-letters-${new Date().toISOString().slice(0, 10)}.csv`);
     toast(`Exported ${all.length.toLocaleString()} letters`);
@@ -1269,27 +1261,29 @@ async function exportLetters(e) {
 }
 
 /* ---------- Letter & email wording ---------- */
+const TPL_KEYS = [['gold_class_en_standard', 'Gold Class · EN'], ['gold_class_fr_standard', 'Gold Class · FR'], ['gold_class_en_aluminum', 'Aluminum · EN'], ['gold_class_fr_aluminum', 'Aluminum · FR']];
 async function viewDesign() {
   loading();
-  const [{ data: S, error }, { data: tpls }] = await Promise.all([sb.from('letter_settings').select('*').eq('id', 1).single(), sb.from('letter_templates').select('*')]);
+  const [{ data: S, error }, { data: tpls }] = await Promise.all([sb.from('letter_settings').select('*').eq('id', 1).single(), sb.from('letter_templates').select('*').eq('program', 'gold_class')]);
   if (error) return view().innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
-  const D = { S: { ...S }, T: {} }; (tpls || []).forEach(t => D.T[t.program + '_' + t.language] = { ...t });
-  let cur = 'gold_class_en', mail = 'en';
+  const D = { S: { ...S }, T: {} }; (tpls || []).forEach(t => D.T[`${t.program}_${t.language}_${t.variant || 'standard'}`] = { ...t });
+  let cur = TPL_KEYS[0][0], mail = 'en';
+  const keyParts = k => { const [, , lang, variant] = k.match(/^(gold_class)_(en|fr)_(\w+)$/); return { program: 'gold_class', language: lang, variant }; };
   const tabBtn = (attr, k, label, on) => `<button class="btn sm ${on ? '' : 'secondary'}" ${attr}="${k}" style="flex:0 0 auto">${label}</button>`;
   const tplEditor = () => { const t = D.T[cur] || { heading: '', body: '' }; return `
-    <div class="row" style="gap:6px">${['gold_class_en', 'gold_class_fr', 'platinum_en', 'platinum_fr'].map(k => tabBtn('data-tpl', k, `${PROGRAM[k.replace(/_(en|fr)$/, '')].en} · ${k.slice(-2).toUpperCase()}`, k === cur)).join('')}</div>
-    <div style="margin-top:14px"><label class="f" for="t_head">Heading</label><input id="t_head" type="text" value="${esc(t.heading)}"></div>
-    <div style="margin-top:12px"><label class="f" for="t_body">Letter text</label><textarea id="t_body" style="min-height:300px">${esc(t.body)}</textarea>
-      <div class="help">Leave a blank line between paragraphs. {{aluminum_note}} adds a line for Gold Class – Aluminum shops and is blank for everyone else. Insert: ${['name', 'icar_id', 'date', 'recognition_date', 'shop_name', 'aluminum_note'].map(p => `<span class="ph" data-ph="${p}" data-target="t_body">{{${p}}}</span>`).join(' ')}</div></div>
-    <div class="row" style="margin-top:12px;align-items:center;gap:14px"><button class="btn secondary" id="t_prev" style="flex:0 0 auto">Preview certificate and letter</button>${cur.startsWith('gold') ? '<label class="check" style="flex:0 0 auto"><input type="checkbox" id="t_alu"><span>As an Aluminum shop</span></label>' : ''}</div>`; };
+    <div class="row" style="gap:6px">${TPL_KEYS.map(([k, l]) => tabBtn('data-tpl', k, l, k === cur)).join('')}</div>
+    <div style="margin-top:14px"><label class="f" for="t_head">Heading (optional)</label><input id="t_head" type="text" value="${esc(t.heading)}" placeholder="Leave blank to match the official letter"></div>
+    <div style="margin-top:12px"><label class="f" for="t_body">Letter text</label><textarea id="t_body" style="min-height:320px">${esc(t.body)}</textarea>
+      <div class="help">Leave a blank line between paragraphs. The store’s name and address and the date are added above the text automatically. Insert: ${['name', 'icar_id', 'date', 'year', 'expires_on'].map(p => `<span class="ph" data-ph="${p}" data-target="t_body">{{${p}}}</span>`).join(' ')}</div></div>
+    <div class="row" style="margin-top:12px"><button class="btn secondary" id="t_prev" style="flex:0 0 auto">Preview certificate and letter</button></div>`; };
   const mailEditor = () => `
     <div class="row" style="gap:6px">${tabBtn('data-mail', 'en', 'English', mail === 'en')}${tabBtn('data-mail', 'fr', 'French', mail === 'fr')}</div>
     <div style="margin-top:14px"><label class="f" for="m_subj">Subject</label><input id="m_subj" type="text" value="${esc(D.S['notify_subject_' + mail])}"></div>
-    <div style="margin-top:12px"><label class="f" for="m_body">Message</label><textarea id="m_body" style="min-height:300px">${esc(D.S['notify_body_' + mail])}</textarea>
-      <div class="help">Insert: ${['contact', 'name', 'program', 'link', 'icar_id', 'check', 'sender'].map(p => `<span class="ph" data-ph="${p}" data-target="m_body">{{${p}}}</span>`).join(' ')}<br>{{link}} is the customer’s personal link. {{check}} is their postal code or last name. {{sender}} is the signed-in staff member.</div></div>`;
+    <div style="margin-top:12px"><label class="f" for="m_body">Message</label><textarea id="m_body" style="min-height:320px">${esc(D.S['notify_body_' + mail])}</textarea>
+      <div class="help">Insert: ${['contact', 'name', 'program', 'link', 'icar_id', 'sender'].map(p => `<span class="ph" data-ph="${p}" data-target="m_body">{{${p}}}</span>`).join(' ')}<br>{{link}} is the store’s personal link. {{icar_id}} is the store number. {{program}} is Gold Class or Gold Class – Aluminum. {{sender}} is the signed-in staff member.</div></div>`;
   view().innerHTML = `<div class="grid2">
     <div class="panel"><h2 style="font-size:24px">Letter wording</h2><div id="tplBox">${tplEditor()}</div></div>
-    <div class="panel"><h2 style="font-size:24px">Notification email</h2><p class="small muted" style="margin-top:-4px">What the team sends customers from <b>Notify customers</b>.</p><div id="mailBox">${mailEditor()}</div></div>
+    <div class="panel"><h2 style="font-size:24px">Notification email</h2><p class="small muted" style="margin-top:-4px">What the team sends stores from <b>Notify customers</b>.</p><div id="mailBox">${mailEditor()}</div></div>
   </div>
   <div class="panel"><h2 style="font-size:24px">Sign-off and contact</h2>
     <div class="row">
@@ -1302,14 +1296,14 @@ async function viewDesign() {
         <label class="btn sm secondary" style="flex:0 0 auto">Upload PNG/JPG<input type="file" accept="image/png,image/jpeg" id="s_sig" hidden></label>${S.signature_data ? '<button class="btn sm ghost" id="sigX" style="flex:0 0 auto">Remove</button>' : ''}</div>
         <div class="help">A transparent PNG works best.</div></div>
       <div><label class="f" for="s_foot">Letter footer line</label><input id="s_foot" type="text" value="${esc(S.footer_text)}"></div>
-      <div><label class="f" for="s_mail">Customer contact email</label><input id="s_mail" type="email" value="${esc(S.support_email)}" placeholder="e.g. info@i-car.ca"><div class="help">Shown on the customer page</div></div>
+      <div><label class="f" for="s_mail">Customer contact email</label><input id="s_mail" type="email" value="${esc(S.support_email)}" placeholder="e.g. collisiontraining@aiacanada.com"><div class="help">Shown on the customer page</div></div>
     </div>
-    <p class="small muted" style="margin:14px 0 0">The I-CAR Canada logo, the Gold Class® and Platinum™ logos, I-CAR Blue and the letterhead layout come from the I-CAR Canada design system and are built in.</p>
+    <p class="small muted" style="margin:14px 0 0">The I-CAR Canada logo, the Gold Class® logos, I-CAR Blue and the letterhead layout come from the I-CAR Canada design system and are built in.</p>
   </div>
   <div class="panel spread"><span class="muted small">Changes apply to letters and emails created after you save.</span><button class="btn" id="saveDesign">Save changes</button></div>`;
 
   const grab = () => {
-    if ($('#t_head')) D.T[cur] = { ...(D.T[cur] || { program: cur.replace(/_(en|fr)$/, ''), language: cur.slice(-2) }), heading: $('#t_head').value, body: $('#t_body').value };
+    if ($('#t_head')) D.T[cur] = { ...(D.T[cur] || keyParts(cur)), heading: $('#t_head').value, body: $('#t_body').value };
     if ($('#m_subj')) { D.S['notify_subject_' + mail] = $('#m_subj').value; D.S['notify_body_' + mail] = $('#m_body').value; }
     Object.assign(D.S, { signatory_name: $('#s_name').value, signatory_title_en: $('#s_ten').value, signatory_title_fr: $('#s_tfr').value, footer_text: $('#s_foot').value, support_email: $('#s_mail').value.trim() });
   };
@@ -1317,10 +1311,10 @@ async function viewDesign() {
   const bindTpl = () => {
     $$('[data-tpl]').forEach(b => b.onclick = () => { grab(); cur = b.dataset.tpl; $('#tplBox').innerHTML = tplEditor(); bindTpl(); });
     $('#t_prev').onclick = async () => {
-      grab(); const [p, l] = [cur.replace(/_(en|fr)$/, ''), cur.slice(-2)];
-      const sample = p === 'gold_class'
-        ? { program: p, language: l, name: 'Sample Collision Centre Ltd.', icar_id: '100001', address: '123 Main Street', city: 'Toronto', province: 'ON', postal_code: 'M5V 1A1', recognition_date: '2026-03-15', code: 'SAMPLE-0000', aluminum: $('#t_alu')?.checked }
-        : { program: p, language: l, name: 'Alex Sample', icar_id: '200002', shop_name: 'Sample Collision Centre Ltd.', recognition_date: '2026-03-15', code: 'SAMPLE-0000', role: 'Steel Structural Technician' };
+      grab(); const k = keyParts(cur);
+      const exp = new Date(); exp.setMonth(exp.getMonth() + 11, 0);
+      const sample = { language: k.language, name: 'Sample Collision Centre Ltd.', icar_id: '100001', address: '123 Main Street', city: 'Toronto', province: 'Ontario', postal_code: 'M5V 1A1',
+        expires_on: exp.toISOString().slice(0, 10), code: 'SAMPLE-0000', aluminum: k.variant === 'aluminum' };
       const doc = await buildLetterPdf(sample, { settings: D.S, templates: Object.values(D.T) });
       window.open(doc.output('bloburl'), '_blank') || doc.save('preview.pdf');
     };
@@ -1342,7 +1336,8 @@ async function saveDesign(D, quiet) {
     notify_subject_en: S.notify_subject_en, notify_subject_fr: S.notify_subject_fr, notify_body_en: S.notify_body_en, notify_body_fr: S.notify_body_fr, updated_at: now, updated_by: uid }).eq('id', 1);
   if (e1) return toast(e1.message, 'err');
   for (const t of Object.values(D.T)) {
-    const { error } = await sb.from('letter_templates').update({ heading: t.heading, body: t.body, updated_at: now, updated_by: uid }).eq('program', t.program).eq('language', t.language);
+    const { error } = await sb.from('letter_templates').update({ heading: t.heading, body: t.body, updated_at: now, updated_by: uid })
+      .eq('program', t.program).eq('language', t.language).eq('variant', t.variant || 'standard');
     if (error) return toast(error.message, 'err');
   }
   await loadContent(true); toast(quiet ? 'Signature saved' : 'Wording saved');
