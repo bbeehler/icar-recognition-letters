@@ -1,8 +1,8 @@
-# I-CAR Recognition Letters
+# I-CAR Recognition Certificates
 
-Official Gold Class® and Platinum™ recognition letters for I-CAR Canada customers, as a stopgap until the new i-car.ca.
+Official Gold Class®, Gold Class® – Aluminum and Platinum™ recognition certificates, each with a confirmation letter from Scott Sinclair, for I-CAR Canada customers. A stopgap until the new i-car.ca.
 
-**How it works:** Tanja's team uploads the current Gold Class and Platinum lists. They email or phone each customer with a personal link and log the contact in the app. The customer opens the link, confirms who they are, and downloads a branded PDF letter in English or French. Every contact and every download is tracked.
+**How it works:** Tanja's team uploads the current Gold Class and Platinum lists. They email or phone each customer with a personal link and log the contact in the app. The customer opens the link, confirms who they are, and downloads one PDF in English or French: page 1 is their recognition certificate, page 2 is Scott's letter. Every contact and every download is tracked.
 
 | Page | Address |
 |---|---|
@@ -29,6 +29,20 @@ Ten failed attempts on one I-CAR ID lock it for an hour. Each letter carries a r
 - **Letter & email wording**: edit the letter text and the notification email (English and French), the signatory, the signature image and the customer contact email.
 - **Team** (admins only): add people (with a temporary password), reset passwords, change roles, deactivate accounts. A person's name signs the notification emails they send.
 
+## The certificate
+
+Each certificate is modelled on the I-CAR recognition plaque for that level (from *ICAR-Recognition_Document_2025_ENFR*): a black frame around a brushed-silver face, with the recognition logo, *Presented to / Présenté à*, the name, *For their commitment to a high level of technical training / Attestant un engagement envers une formation technique de haut niveau*, a year plate and the I-CAR Canada logo.
+
+| Level | Layout | Comes from the list |
+|---|---|---|
+| Gold Class® | Portrait, Gold Class logo, business name | Gold Class list |
+| Gold Class® – Aluminum | Portrait, Aluminum logo, business name; the letter adds an Aluminum line | Gold Class list, **Aluminum** column = Yes / X / 1 |
+| Platinum™ | Landscape, *Recognition / Reconnaissance*, Platinum logo, technician's name and role | Platinum list, optional **Role** column (standard roles are translated to French) |
+
+The year plate shows the year the certificate was issued. The certificate type is set by the customer's language choice and the list. For example, an English request from an Aluminum shop gets the English Aluminum certificate and an English letter.
+
+**Missing artwork:** the design system only has the French Gold Class Aluminium logo. Add the English file at `assets/cert/gold-class-aluminum-en.png` (transparent PNG, about 640px tall). Until then, English Aluminum certificates use the French logo.
+
 ## Branding
 
 Built to the **I-CAR Canada design system**:
@@ -45,10 +59,12 @@ The PDF follows the letterhead rules: logo top left at 1.28in wide, the program 
 
 ```
 index.html                                customer page and staff back end
-assets/                                   I-CAR Canada, Gold Class and Platinum logos (EN/FR); Source Sans 3 fonts
+assets/                                   I-CAR Canada, Gold Class and Platinum logos (EN/FR); Source Sans 3 (web) and Barlow Condensed (certificate) fonts
+assets/cert/                              high-resolution recognition logos for the certificates
 supabase/migrations/001_schema.sql        tables, security rules, letter functions
 supabase/seed.sql                         default letter wording and sign-off
 supabase/migrations/002_customer_notifications.sql   outreach tracking, notification email wording, brand wording fixes
+supabase/migrations/003_recognition_certificates.sql  Gold Class – Aluminum and Platinum role, certificate wording
 supabase/functions/manage-staff/          team management (create users, reset passwords, deactivate)
 samples/                                  sample Gold Class and Platinum lists for practice uploads
 ```
@@ -68,5 +84,6 @@ In an empty Supabase project, run these in order in the SQL editor:
 1. `migrations/001_schema.sql`
 2. `seed.sql`
 3. `migrations/002_customer_notifications.sql`
+4. `migrations/003_recognition_certificates.sql`
 
 Then deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.

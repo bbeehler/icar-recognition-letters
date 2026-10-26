@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>I-CAR Recognition Letters</title>
+<title>I-CAR Recognition Certificates</title>
 <meta name="description" content="Download your official I-CAR Canada Gold Class or Platinum recognition letter.">
 <link rel="icon" href="assets/icar-canada-logo.svg">
 <style>
@@ -200,8 +200,23 @@ const ASSET = {
   logo: 'assets/icar-canada-logo.svg',
   logoPng: 'assets/icar-canada-logo.png',
   gold_class: { en: 'assets/gold-class-en.png', fr: 'assets/gold-class-fr.png' },
-  platinum: { en: 'assets/platinum-en.png', fr: 'assets/platinum-fr.png' }
+  platinum: { en: 'assets/platinum-en.png', fr: 'assets/platinum-fr.png' },
+  aluminum: { en: 'assets/cert/gold-class-aluminum-en.png', fr: 'assets/cert/gold-class-aluminium-fr.png' },
+  cert: {
+    gold_class: { en: 'assets/cert/gold-class-en.png', fr: 'assets/cert/gold-class-fr.png' },
+    aluminum: { en: 'assets/cert/gold-class-aluminum-en.png', fr: 'assets/cert/gold-class-aluminium-fr.png' },
+    platinum: { en: 'assets/cert/platinum-en.png', fr: 'assets/cert/platinum-fr.png' }
+  },
+  fontBold: 'assets/fonts/BarlowCondensed-700.ttf',
+  fontSemi: 'assets/fonts/BarlowCondensed-600.ttf'
 };
+// Recognition logo for a record: Gold Class – Aluminum shops get the Aluminum mark. Until the English
+// Aluminum artwork is added at assets/cert/gold-class-aluminum-en.png, the French file is used.
+function recogLogo(L, lang, size = 'web') {
+  if (L.program === 'gold_class' && L.aluminum) return [ASSET.aluminum[lang], ASSET.aluminum.fr];
+  return [size === 'cert' ? ASSET.cert[L.program][lang] : ASSET[L.program][lang]];
+}
+async function firstImg(srcs) { for (const s of srcs) { const d = await imgData(s); if (d) return d; } return null; }
 
 const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 const app = document.getElementById('app');
@@ -252,19 +267,23 @@ const BLUE = [0, 108, 180], CHARCOAL = [87, 94, 105];
 const PDF_T = { en: { ref: 'Letter reference' }, fr: { ref: 'Référence de la lettre' } };
 
 /* L = { program, language, name, icar_id, shop_name, address, city, province, postal_code, recognition_date, issued_at, code } */
-async function buildLetterPdf(L, content) {
+async function buildLetterPdf(L, content, opts = {}) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'letter', compress: true });
+  const withCert = opts.certificate !== false;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: withCert && L.program === 'platinum' ? 'landscape' : 'portrait', compress: true });
+  let first = 1;
+  if (withCert) { await drawCertificate(doc, L); doc.addPage('letter', 'portrait'); first = 2; }
   const S = content.settings || {};
   const lang = L.language === 'fr' ? 'fr' : 'en';
   const tpl = (content.templates || []).find(t => t.program === L.program && t.language === lang) || { heading: '', body: '' };
   const W = 612, H = 792, M = 72, CW = W - 2 * M, BOTTOM = H - 108;   // letterhead: 1in sides, 1.5in bottom
   const issued = L.issued_at ? parseDate(L.issued_at) : new Date();
   const v = { name: L.name || '', icar_id: L.icar_id || '', shop_name: L.shop_name || '', date: fmtDate(issued, lang),
-    recognition_date: L.recognition_date ? fmtDate(L.recognition_date, lang) : '', program: PROGRAM[L.program]?.[lang] || '' };
+    recognition_date: L.recognition_date ? fmtDate(L.recognition_date, lang) : '', program: PROGRAM[L.program]?.[lang] || '',
+    aluminum_note: L.program === 'gold_class' && L.aluminum ? (lang === 'fr' ? 'Cette entreprise détient également la désignation Gold Class® – Aluminium.' : 'This business also holds the Gold Class® – Aluminum designation.') : '' };
   doc.setProperties({ title: fill(tpl.heading, v), author: 'I-CAR Canada', subject: v.name });
 
-  const [logo, prog, sig] = await Promise.all([imgData(ASSET.logoPng), imgData(ASSET[L.program]?.[lang]), imgData(S.signature_data)]);
+  const [logo, prog, sig] = await Promise.all([imgData(ASSET.logoPng), firstImg(recogLogo(L, lang)), imgData(S.signature_data)]);
   const header = async () => {
     if (logo) { const d = await imgDims(logo); const w = 92, h = w * d.h / d.w; doc.addImage(logo, 'PNG', M, 44, w, h, 'icar-logo', 'FAST'); }   // 1.28in letterhead logo
     if (prog) { const d = await imgDims(prog); const h = 64, w = h * d.w / d.h; doc.addImage(prog, 'PNG', W - M - w, 34, w, h, 'prog-logo', 'FAST'); } // program logo, 0.9in tall
@@ -308,19 +327,110 @@ async function buildLetterPdf(L, content) {
   const title = lang === 'fr' ? S.signatory_title_fr : S.signatory_title_en;
   if (title) { body(); doc.text(title, M, y); }
   const pages = doc.getNumberOfPages();
-  for (let i = 1; i <= pages; i++) { doc.setPage(i); footer(i, pages); }
+  for (let i = first; i <= pages; i++) { doc.setPage(i); footer(i - first + 1, pages - first + 1); }
   return doc;
 }
-function letterFilename(L) { return `I-CAR-${PROGRAM[L.program]?.slug || 'Recognition'}-Letter-${String(L.icar_id || '').replace(/[^A-Za-z0-9-]/g, '')}.pdf`; }
+function letterFilename(L) { return `I-CAR-${PROGRAM[L.program]?.slug || 'Recognition'}${L.aluminum ? '-Aluminum' : ''}-Recognition-${String(L.icar_id || '').replace(/[^A-Za-z0-9-]/g, '')}.pdf`; }
+
+/* ---------- Recognition certificate (modelled on the I-CAR recognition plaques) ---------- */
+const CERT_T = {
+  en: { presented: 'PRESENTED TO', tagline: 'FOR THEIR COMMITMENT TO A HIGH LEVEL OF TECHNICAL TRAINING', recognition: 'RECOGNITION', role: 'IN THE ROLE OF' },
+  fr: { presented: 'PRÉSENTÉ À', tagline: 'ATTESTANT UN ENGAGEMENT ENVERS UNE FORMATION TECHNIQUE DE HAUT NIVEAU', recognition: 'RECONNAISSANCE', role: 'POUR LE RÔLE DE' }
+};
+const ROLES = [
+  [/non.?struct/i, 'Non-Structural Technician', 'Technicien non spécialisé en structures'],
+  [/steel/i, 'Steel Structural Technician', 'Technicien en structures d’acier'],
+  [/alumin/i, 'Aluminum Structural Technician', 'Technicien en structures d’aluminium'],
+  [/refinish|finition|paint/i, 'Refinish Technician', 'Technicien en finition'],
+  [/estimat/i, 'Estimator', 'Estimateur']
+];
+function roleLabel(role, lang) {
+  if (!role) return '';
+  return role.split(/\s*[;,|\/]\s*/).filter(Boolean).map(r => { const m = ROLES.find(([rx]) => rx.test(r)); return m ? (lang === 'fr' ? m[2] : m[1]) : r; }).join(' · ');
+}
+const FONT_CACHE = {};
+function fontB64(src) {
+  if (!FONT_CACHE[src]) FONT_CACHE[src] = fetch(src).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(buf => {
+    const b = new Uint8Array(buf); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s);
+  }).catch(() => null);
+  return FONT_CACHE[src];
+}
+async function certFonts(doc) {
+  const [b, m] = await Promise.all([fontB64(ASSET.fontBold), fontB64(ASSET.fontSemi)]);
+  if (!b || !m) return { bold: ['helvetica', 'bold'], semi: ['helvetica', 'bold'] };
+  doc.addFileToVFS('BarlowCondensed-700.ttf', b); doc.addFont('BarlowCondensed-700.ttf', 'BarlowCondensed', 'bold');
+  doc.addFileToVFS('BarlowCondensed-600.ttf', m); doc.addFont('BarlowCondensed-600.ttf', 'BarlowCondensed', 'normal');
+  return { bold: ['BarlowCondensed', 'bold'], semi: ['BarlowCondensed', 'normal'] };
+}
+// Plaque face: black frame around a brushed-silver panel
+function plaqueFace(doc, W, H) {
+  const m = 22, f = 13, x = m + f, y = m + f, w = W - 2 * (m + f), h = H - 2 * (m + f);
+  doc.setFillColor(255, 255, 255); doc.rect(0, 0, W, H, 'F');
+  doc.setFillColor(26, 26, 28); doc.roundedRect(m, m, W - 2 * m, H - 2 * m, 3, 3, 'F');
+  const N = 90;
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1), sheen = Math.pow(Math.cos((t - 0.38) * Math.PI * 1.15), 2);
+    const g = Math.round(222 + 31 * sheen); doc.setFillColor(g, g + 1, Math.min(255, g + 3));
+    doc.rect(x + (w * i) / N, y, w / N + 0.8, h, 'F');
+  }
+  doc.setDrawColor(150, 153, 158); doc.setLineWidth(0.6); doc.rect(x + 7, y + 7, w - 14, h - 14, 'S');
+  return { x, y, w, h };
+}
+function fitLines(doc, text, maxW, maxSize, minSize) {
+  for (let s = maxSize; s >= minSize; s -= 1) { doc.setFontSize(s); if (doc.getTextWidth(text) <= maxW) return [text]; }
+  doc.setFontSize(minSize); return doc.splitTextToSize(text, maxW).slice(0, 2);
+}
+function centered(doc, text, cx, y, spacing = 0) {
+  if (!spacing) return doc.text(text, cx, y, { align: 'center' });
+  const w = doc.getTextWidth(text) + spacing * (text.length - 1); doc.text(text, cx - w / 2, y, { charSpace: spacing });
+}
+function yearPlate(doc, F, cx, y, year) {
+  const w = 78, h = 28; doc.setFillColor(186, 189, 193); doc.roundedRect(cx - w / 2, y, w, h, 2, 2, 'F');
+  doc.setFillColor(160, 163, 168); doc.rect(cx - w / 2, y + h - 2, w, 2, 'F');
+  doc.setFont(...F.bold); doc.setFontSize(20); doc.setTextColor(30, 30, 32); centered(doc, String(year), cx, y + 20.5);
+}
+async function drawCertificate(doc, L) {
+  const lang = L.language === 'fr' ? 'fr' : 'en', T = CERT_T[lang], F = await certFonts(doc);
+  const year = (L.issued_at ? parseDate(L.issued_at) : new Date()).getFullYear();
+  const [mark, corp] = await Promise.all([firstImg(recogLogo(L, lang, 'cert')), imgData(ASSET.logoPng)]);
+  const name = String(L.name || '').toUpperCase();
+  const ink = () => doc.setTextColor(22, 22, 24), muted = () => doc.setTextColor(70, 73, 78);
+  if (L.program !== 'platinum') {
+    const W = 612, H = 792, cx = W / 2, P = plaqueFace(doc, W, H);
+    let y = 74;
+    if (mark) { const d = await imgDims(mark); const h = 318, w = h * d.w / d.h; doc.addImage(mark, 'PNG', cx - w / 2, y, w, h, 'cert-mark', 'FAST'); y += h; }
+    y += 34; doc.setFont(...F.semi); doc.setFontSize(11); muted(); centered(doc, T.presented, cx, y, 1.6);
+    doc.setFont(...F.bold); ink(); const lines = fitLines(doc, name, P.w - 70, 54, 34);
+    y += lines.length > 1 ? 44 : 52; for (const l of lines) { centered(doc, l, cx, y); y += doc.getFontSize() * 0.98; }
+    y += 2; doc.setFont(...F.semi); muted(); fitLines(doc, T.tagline, P.w - 90, 11, 8); centered(doc, T.tagline, cx, y, 0.6);
+    yearPlate(doc, F, cx, Math.max(y + 34, 612), year);
+    if (corp) { const d = await imgDims(corp); const w = 104, h = w * d.h / d.w; doc.addImage(corp, 'PNG', cx - w / 2, 686, w, h, 'icar-logo', 'FAST'); }
+  } else {
+    const W = 792, H = 612, P = plaqueFace(doc, W, H), cx = 528, colW = 372;
+    if (corp) { const d = await imgDims(corp); const w = 86, h = w * d.h / d.w; doc.addImage(corp, 'PNG', P.x + 22, P.y + 20, w, h, 'icar-logo', 'FAST'); }
+    if (mark) { const d = await imgDims(mark); const h = 330, w = h * d.w / d.h; doc.addImage(mark, 'PNG', P.x + 44, 128, w, h, 'cert-mark', 'FAST'); }
+    doc.setFont(...F.bold); ink(); fitLines(doc, T.recognition, colW, 58, 40); centered(doc, T.recognition, cx, 150);
+    doc.setFont(...F.semi); doc.setFontSize(10.5); muted(); centered(doc, T.presented, cx, 184, 1.6);
+    doc.setFont(...F.bold); ink(); const lines = fitLines(doc, name, colW, 48, 30);
+    let y = lines.length > 1 ? 222 : 236; for (const l of lines) { centered(doc, l, cx, y); y += doc.getFontSize() * 0.98; }
+    doc.setFont(...F.semi); muted(); fitLines(doc, T.tagline, colW, 10, 7.5); centered(doc, T.tagline, cx, y + 4, 0.4);
+    const role = roleLabel(L.role, lang).toUpperCase();
+    if (role) {
+      doc.setFontSize(9.5); centered(doc, T.role, cx, y + 44, 1.4);
+      doc.setFont(...F.bold); ink(); const rl = fitLines(doc, role, colW, 28, 16); let ry = y + 76; for (const l of rl) { centered(doc, l, cx, ry); ry += doc.getFontSize(); }
+    }
+    yearPlate(doc, F, cx, 470, year);
+  }
+}
 
 /* =====================================================================
    CUSTOMER PAGE
    ===================================================================== */
 const T = {
   en: {
-    tag: 'Recognition letters',
-    title: 'Your I-CAR® recognition letter',
-    intro: 'Download an official letter confirming your Gold Class® or Platinum™ recognition, in English or French.',
+    tag: 'Recognition certificates',
+    title: 'Your I-CAR® recognition certificate',
+    intro: 'Download your official Gold Class® or Platinum™ recognition certificate, with a confirmation letter from I-CAR Canada, in English or French.',
     s1: 'Choose your recognition', s2: 'Confirm it’s you', s3: 'Your contact details',
     gold: 'Gold Class®', goldSub: 'For collision repair businesses',
     plat: 'Platinum™', platSub: 'For individual technicians and professionals',
@@ -328,13 +438,13 @@ const T = {
     postal: 'Business postal code', postalHelp: 'The postal code I-CAR has on file for your business',
     last: 'Last name', lastHelp: 'As it appears on your I-CAR profile',
     yourName: 'Your name', yourEmail: 'Your email',
-    letterLang: 'Letter language', english: 'English', french: 'French',
+    letterLang: 'Certificate and letter language', english: 'English', french: 'French',
     consent: 'Yes, send me I-CAR Canada news, training updates and offers by email. I can unsubscribe at any time.',
-    privacy: 'We record your name and email with each request so I-CAR Canada can keep track of the letters it issues.',
-    submit: 'Download my letter', working: 'Checking…', making: 'Preparing your letter…',
-    readyTitle: 'Your letter is ready',
-    readyBody: n => `The recognition letter for ${n} has been downloaded to your device.`,
-    ref: 'Letter reference', refNote: 'Quote this reference if you contact I-CAR Canada about your letter.',
+    privacy: 'We record your name and email with each request so I-CAR Canada can keep track of the certificates and letters it issues.',
+    submit: 'Download my certificate and letter', working: 'Checking…', making: 'Preparing your certificate…',
+    readyTitle: 'Your certificate and letter are ready',
+    readyBody: n => `The recognition certificate and letter for ${n} have been downloaded to your device as one PDF.`,
+    ref: 'Reference', refNote: 'Quote this reference if you contact I-CAR Canada about your certificate or letter.',
     again: 'Download again', another: 'Request another letter',
     checkGold: 'the postal code', checkPlat: 'the last name',
     err: {
@@ -347,9 +457,9 @@ const T = {
     contact: 'Questions? Contact', rights: 'I-CAR Canada', licence: 'Licensed by AIA Canada'
   },
   fr: {
-    tag: 'Lettres de reconnaissance',
-    title: 'Votre lettre de reconnaissance I-CAR®',
-    intro: 'Téléchargez une lettre officielle confirmant votre reconnaissance Gold Class® ou Platinum™, en français ou en anglais.',
+    tag: 'Certificats de reconnaissance',
+    title: 'Votre certificat de reconnaissance I-CAR®',
+    intro: 'Téléchargez votre certificat de reconnaissance Gold Class® ou Platinum™ officiel, accompagné d’une lettre de confirmation d’I-CAR Canada, en français ou en anglais.',
     s1: 'Choisissez votre reconnaissance', s2: 'Confirmez votre identité', s3: 'Vos coordonnées',
     gold: 'Gold Class®', goldSub: 'Pour les entreprises de réparation de carrosserie',
     plat: 'Platinum™', platSub: 'Pour les techniciens et les professionnels',
@@ -357,13 +467,13 @@ const T = {
     postal: 'Code postal de l’entreprise', postalHelp: 'Le code postal inscrit au dossier I-CAR de votre entreprise',
     last: 'Nom de famille', lastHelp: 'Tel qu’il figure à votre profil I-CAR',
     yourName: 'Votre nom', yourEmail: 'Votre courriel',
-    letterLang: 'Langue de la lettre', english: 'Anglais', french: 'Français',
+    letterLang: 'Langue du certificat et de la lettre', english: 'Anglais', french: 'Français',
     consent: 'Oui, envoyez-moi par courriel les nouvelles, les mises à jour sur la formation et les offres d’I-CAR Canada. Je peux me désabonner en tout temps.',
-    privacy: 'Nous consignons votre nom et votre courriel avec chaque demande afin qu’I-CAR Canada puisse faire le suivi des lettres émises.',
-    submit: 'Télécharger ma lettre', working: 'Vérification…', making: 'Préparation de votre lettre…',
-    readyTitle: 'Votre lettre est prête',
-    readyBody: n => `La lettre de reconnaissance de ${n} a été téléchargée sur votre appareil.`,
-    ref: 'Référence de la lettre', refNote: 'Mentionnez cette référence si vous communiquez avec I-CAR Canada au sujet de votre lettre.',
+    privacy: 'Nous consignons votre nom et votre courriel avec chaque demande afin qu’I-CAR Canada puisse faire le suivi des certificats et des lettres émis.',
+    submit: 'Télécharger mon certificat et ma lettre', working: 'Vérification…', making: 'Préparation de votre certificat…',
+    readyTitle: 'Votre certificat et votre lettre sont prêts',
+    readyBody: n => `Le certificat de reconnaissance et la lettre de ${n} ont été téléchargés sur votre appareil en un seul PDF.`,
+    ref: 'Référence', refNote: 'Mentionnez cette référence si vous communiquez avec I-CAR Canada au sujet de votre certificat ou de votre lettre.',
     again: 'Télécharger de nouveau', another: 'Demander une autre lettre',
     checkGold: 'le code postal', checkPlat: 'le nom de famille',
     err: {
@@ -469,7 +579,7 @@ function renderReady() {
   const t = T[LANG], r = PUB.result;
   app.innerHTML = pubShell(`
     <div class="panel">
-      <div class="ready"><img src="${ASSET[r.program][LANG]}" alt="${esc(PROGRAM[r.program].mark)}">
+      <div class="ready"><img src="${recogLogo(r, LANG)[0]}" onerror="this.onerror=null;this.src='${recogLogo(r, LANG).slice(-1)[0]}'" alt="${esc(PROGRAM[r.program].mark)}">
         <div><h1 style="font-size:34px;color:var(--icar-blue)">${esc(t.readyTitle)}</h1><p style="margin:0">${esc(t.readyBody(r.name))}</p></div></div>
       <div class="refbox" style="margin-top:22px"><div class="small muted">${esc(t.ref)}</div><div class="mono" style="font-size:20px;font-weight:700">${esc(r.code)}</div><div class="small muted">${esc(t.refNote)}</div></div>
       <div class="row" style="margin-top:22px"><button class="btn" id="againBtn">${esc(t.again)}</button><button class="btn secondary" id="anotherBtn">${esc(t.another)}</button></div>
@@ -624,7 +734,7 @@ const CHECK_PHRASE = { gold_class: { en: 'your business postal code', fr: 'du co
 const PHONE_SCRIPT = {
   en: `Hi, this is {{sender}} from I-CAR Canada. I'm calling about {{name}}'s I-CAR {{program}} recognition.
 
-Congratulations! You can now download an official recognition letter, in English or French, whenever you need it.
+Congratulations! You can now download your official recognition certificate and a confirmation letter, in English or French, whenever you need them.
 
 Can I email you the link? [Confirm the best email address]
 
@@ -633,7 +743,7 @@ To download it, you'll need your I-CAR ID ({{icar_id}}) and {{check}}.
 [If they'd rather not get an email] The address is {{short}}. Choose {{program}}, then enter your I-CAR ID.`,
   fr: `Bonjour, ici {{sender}} d'I-CAR Canada. Je vous appelle au sujet de la reconnaissance {{program}} d'I-CAR de {{name}}.
 
-Félicitations! Vous pouvez maintenant télécharger une lettre de reconnaissance officielle, en français ou en anglais, au moment qui vous convient.
+Félicitations! Vous pouvez maintenant télécharger votre certificat de reconnaissance officiel et une lettre de confirmation, en français ou en anglais, au moment qui vous convient.
 
 Puis-je vous envoyer le lien par courriel? [Confirmer la meilleure adresse courriel]
 
@@ -683,7 +793,7 @@ async function loadNotify() {
     : r.last_contact_at ? `<span class="badge blue">${r.last_contact_method === 'phone' ? 'Phoned' : 'Emailed'}</span><div class="sub">${esc(fmtShort(r.last_contact_at))}${r.last_contact_by ? ' · ' + esc(r.last_contact_by) : ''}${r.contacts > 1 ? ` · ${r.contacts} contacts` : ''}</div>`
     : '<span class="badge warn">Not contacted</span>';
   res.innerHTML = NROWS.length ? `<div class="tablewrap"><table><thead><tr><th>${NF.program === 'gold_class' ? 'Business' : 'Individual'}</th><th>I-CAR ID</th><th>Contact on file</th><th>Status</th><th></th></tr></thead><tbody>
-    ${NROWS.map(r => `<tr><td><b>${esc(r.display_name)}</b><div class="sub">${esc(NF.program === 'gold_class' ? [r.city, r.province].filter(Boolean).join(', ') : (r.shop_name || ''))}</div></td>
+    ${NROWS.map(r => `<tr><td><b>${esc(r.display_name)}</b>${r.aluminum ? ' <span class="badge">Aluminum</span>' : ''}<div class="sub">${esc(NF.program === 'gold_class' ? [r.city, r.province].filter(Boolean).join(', ') : [r.shop_name, roleLabel(r.role, 'en')].filter(Boolean).join(' · '))}</div></td>
       <td class="nowrap">${esc(r.icar_id)}</td>
       <td>${r.contact_name ? esc(r.contact_name) + '<br>' : ''}${r.contact_email ? `<span class="sub">${esc(r.contact_email)}</span><br>` : ''}${r.contact_phone ? `<span class="sub">${esc(r.contact_phone)}</span>` : ''}${!r.contact_name && !r.contact_email && !r.contact_phone ? '<span class="sub">None</span>' : ''}</td>
       <td>${status(r)}</td><td class="nowrap"><button class="btn sm" data-notify="${r.id}">Notify</button></td></tr>`).join('')}
@@ -776,6 +886,7 @@ const FIELDS = {
     { k: 'province', label: 'Province', rx: /prov|state|region/i },
     { k: 'postal_code', label: 'Postal code', req: true, rx: /postal|zip|code postal/i, note: 'Customers confirm with this' },
     { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i },
+    { k: 'aluminum', label: 'Aluminum designation', rx: /alumin/i, note: 'Yes / X / 1 marks Gold Class – Aluminum' },
     { k: 'contact_name', label: 'Contact name', rx: /contact.*name|owner|manager|primary.*contact|^contact$/i, note: 'For notifying them' },
     { k: 'contact_email', label: 'Contact email', rx: /e-?mail|courriel/i, note: 'For notifying them' },
     { k: 'contact_phone', label: 'Contact phone', rx: /phone|tel|mobile|cell/i, note: 'For notifying them' }
@@ -786,6 +897,7 @@ const FIELDS = {
     { k: 'first_name', label: 'First name', rx: /first|given|prénom|prenom/i },
     { k: 'last_name', label: 'Last name', rx: /last|surname|family|nom de famille|^nom$/i, note: 'Customers confirm with this' },
     { k: 'shop_name', label: 'Business / employer', rx: /shop|employer|company|business|location|facility/i },
+    { k: 'role', label: 'Role', rx: /role|rôle|position|designation/i, note: 'Shown on the certificate' },
     { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i },
     { k: 'contact_email', label: 'Email', rx: /e-?mail|courriel/i, note: 'For notifying them' },
     { k: 'contact_phone', label: 'Phone', rx: /phone|tel|mobile|cell/i, note: 'For notifying them' }
@@ -837,11 +949,12 @@ function buildRows() {
     const first = get(r, 'first_name'), last = get(r, 'last_name');
     const name = get(r, 'name') || [first, last].filter(Boolean).join(' ');
     const o = { icar_id: get(r, 'icar_id'), name, recognition_date: m.recognition_date ? excelDateToISO(r[m.recognition_date]) : '', contact_email: get(r, 'contact_email'), contact_phone: get(r, 'contact_phone') };
-    if (P === 'gold_class') Object.assign(o, { address: get(r, 'address'), city: get(r, 'city'), province: get(r, 'province'), postal_code: get(r, 'postal_code'), contact_name: get(r, 'contact_name') });
-    else Object.assign(o, { last_name: last, shop_name: get(r, 'shop_name'), contact_name: name });
+    if (P === 'gold_class') Object.assign(o, { address: get(r, 'address'), city: get(r, 'city'), province: get(r, 'province'), postal_code: get(r, 'postal_code'), contact_name: get(r, 'contact_name'), aluminum: get(r, 'aluminum') });
+    else Object.assign(o, { last_name: last, shop_name: get(r, 'shop_name'), contact_name: name, role: get(r, 'role') });
     return o;
   });
 }
+const isYes = v => /^(true|yes|y|oui|o|x|1|aluminum|aluminium)$/i.test(String(v || '').trim());
 const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 function renderMapping() {
   const U = UPLOAD, P = U.program, fields = FIELDS[P];
@@ -862,8 +975,8 @@ function renderMapping() {
       ${noCheck ? `<div class="alert warn"><b>${noCheck.toLocaleString()}</b> ${noCheck === 1 ? 'has' : 'have'} no ${P === 'gold_class' ? 'postal code' : 'last name'}, so they can’t download a letter</div>` : ''}
       ${noContact ? `<div class="alert info"><b>${noContact.toLocaleString()}</b> ${noContact === 1 ? 'has' : 'have'} no email or phone to notify them with</div>` : ''}
     </div>
-    <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>I-CAR ID</th><th>Name</th>${P === 'gold_class' ? '<th>Postal code</th>' : '<th>Last name</th>'}<th>Email</th><th>Phone</th></tr></thead><tbody>
-      ${valid.slice(0, 5).map(r => `<tr><td>${esc(r.icar_id)}</td><td>${esc(r.name)}</td><td>${esc(P === 'gold_class' ? r.postal_code : (r.last_name || r.name.split(/\s+/).pop()))}</td><td>${esc(r.contact_email)}</td><td>${esc(r.contact_phone)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Match the required columns to see a preview.</td></tr>'}
+    <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>I-CAR ID</th><th>Name</th>${P === 'gold_class' ? '<th>Postal code</th><th>Aluminum</th>' : '<th>Last name</th><th>Role</th>'}<th>Email</th><th>Phone</th></tr></thead><tbody>
+      ${valid.slice(0, 5).map(r => `<tr><td>${esc(r.icar_id)}</td><td>${esc(r.name)}</td><td>${esc(P === 'gold_class' ? r.postal_code : (r.last_name || r.name.split(/\s+/).pop()))}</td><td>${P === 'gold_class' ? (isYes(r.aluminum) ? 'Yes' : '') : esc(roleLabel(r.role, 'en'))}</td><td>${esc(r.contact_email)}</td><td>${esc(r.contact_phone)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Match the required columns to see a preview.</td></tr>'}
     </tbody></table></div>
     <h3 class="section-head" style="margin-top:24px"><span class="n">3</span>Replace the list</h3>
     ${missingReq ? '<div class="alert err" style="margin-bottom:10px">Match the required columns (*) first.</div>' : ''}
@@ -898,7 +1011,7 @@ function lettersTable(rows, actions = true) {
     ${rows.map(r => `<tr><td class="nowrap">${esc(fmtDateTime(r.created_at))}</td><td>${progBadge(r.program)}<div>${esc(r.recipient_name)}</div></td><td>${esc(r.icar_id)}</td>
       <td>${esc(r.requester_name)}<div class="sub"><a href="mailto:${esc(r.requester_email)}">${esc(r.requester_email)}</a></div></td>
       <td>${r.marketing_consent ? '<span class="badge ok">Yes</span>' : '<span class="badge">No</span>'}</td><td>${esc(r.language.toUpperCase())}</td>
-      <td class="mono nowrap">${esc(r.verification_code)}</td>${actions ? `<td><button class="btn sm secondary" data-pdf="${r.id}">PDF</button></td>` : ''}</tr>`).join('')}
+      <td class="mono nowrap">${esc(r.verification_code)}</td>${actions ? `<td><button class="btn sm secondary" data-pdf="${r.id}" title="Certificate and letter">PDF</button></td>` : ''}</tr>`).join('')}
   </tbody></table>`;
 }
 async function viewLetters() {
@@ -941,7 +1054,7 @@ async function staffPdf(r, btn) {
     let rec = null;
     if (r.recognition_id) ({ data: rec } = await sb.from('recognitions').select('*').eq('id', r.recognition_id).maybeSingle());
     const L = { program: r.program, language: r.language, name: r.recipient_name, icar_id: r.icar_id, code: r.verification_code, issued_at: r.created_at,
-      shop_name: rec?.shop_name, address: rec?.address, city: rec?.city, province: rec?.province, postal_code: rec?.postal_code, recognition_date: rec?.recognition_date };
+      shop_name: rec?.shop_name, address: rec?.address, city: rec?.city, province: rec?.province, postal_code: rec?.postal_code, recognition_date: rec?.recognition_date, aluminum: rec?.aluminum, role: rec?.role };
     (await buildLetterPdf(L, await loadContent(true))).save(letterFilename(L));
   } catch (e) { toast(e.message, 'err'); } finally { busy(btn, false); }
 }
@@ -969,8 +1082,8 @@ async function viewDesign() {
     <div class="row" style="gap:6px">${['gold_class_en', 'gold_class_fr', 'platinum_en', 'platinum_fr'].map(k => tabBtn('data-tpl', k, `${PROGRAM[k.replace(/_(en|fr)$/, '')].en} · ${k.slice(-2).toUpperCase()}`, k === cur)).join('')}</div>
     <div style="margin-top:14px"><label class="f" for="t_head">Heading</label><input id="t_head" type="text" value="${esc(t.heading)}"></div>
     <div style="margin-top:12px"><label class="f" for="t_body">Letter text</label><textarea id="t_body" style="min-height:300px">${esc(t.body)}</textarea>
-      <div class="help">Leave a blank line between paragraphs. Insert: ${['name', 'icar_id', 'date', 'recognition_date', 'shop_name'].map(p => `<span class="ph" data-ph="${p}" data-target="t_body">{{${p}}}</span>`).join(' ')}</div></div>
-    <button class="btn secondary" id="t_prev" style="margin-top:12px">Preview this letter</button>`; };
+      <div class="help">Leave a blank line between paragraphs. {{aluminum_note}} adds a line for Gold Class – Aluminum shops and is blank for everyone else. Insert: ${['name', 'icar_id', 'date', 'recognition_date', 'shop_name', 'aluminum_note'].map(p => `<span class="ph" data-ph="${p}" data-target="t_body">{{${p}}}</span>`).join(' ')}</div></div>
+    <div class="row" style="margin-top:12px;align-items:center;gap:14px"><button class="btn secondary" id="t_prev" style="flex:0 0 auto">Preview certificate and letter</button>${cur.startsWith('gold') ? '<label class="check" style="flex:0 0 auto"><input type="checkbox" id="t_alu"><span>As an Aluminum shop</span></label>' : ''}</div>`; };
   const mailEditor = () => `
     <div class="row" style="gap:6px">${tabBtn('data-mail', 'en', 'English', mail === 'en')}${tabBtn('data-mail', 'fr', 'French', mail === 'fr')}</div>
     <div style="margin-top:14px"><label class="f" for="m_subj">Subject</label><input id="m_subj" type="text" value="${esc(D.S['notify_subject_' + mail])}"></div>
@@ -1008,8 +1121,8 @@ async function viewDesign() {
     $('#t_prev').onclick = async () => {
       grab(); const [p, l] = [cur.replace(/_(en|fr)$/, ''), cur.slice(-2)];
       const sample = p === 'gold_class'
-        ? { program: p, language: l, name: 'Sample Collision Centre Ltd.', icar_id: '100001', address: '123 Main Street', city: 'Toronto', province: 'ON', postal_code: 'M5V 1A1', recognition_date: '2026-03-15', code: 'SAMPLE-0000' }
-        : { program: p, language: l, name: 'Alex Sample', icar_id: '200002', shop_name: 'Sample Collision Centre Ltd.', recognition_date: '2026-03-15', code: 'SAMPLE-0000' };
+        ? { program: p, language: l, name: 'Sample Collision Centre Ltd.', icar_id: '100001', address: '123 Main Street', city: 'Toronto', province: 'ON', postal_code: 'M5V 1A1', recognition_date: '2026-03-15', code: 'SAMPLE-0000', aluminum: $('#t_alu')?.checked }
+        : { program: p, language: l, name: 'Alex Sample', icar_id: '200002', shop_name: 'Sample Collision Centre Ltd.', recognition_date: '2026-03-15', code: 'SAMPLE-0000', role: 'Steel Structural Technician' };
       const doc = await buildLetterPdf(sample, { settings: D.S, templates: Object.values(D.T) });
       window.open(doc.output('bloburl'), '_blank') || doc.save('preview.pdf');
     };
