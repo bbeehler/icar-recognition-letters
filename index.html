@@ -4,160 +4,204 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>I-CAR Recognition Letters</title>
-<meta name="description" content="Request and verify official I-CAR Canada Gold Class and Platinum recognition letters.">
+<meta name="description" content="Download your official I-CAR Canada Gold Class or Platinum recognition letter.">
+<link rel="icon" href="assets/icar-canada-logo.svg">
 <style>
+/* I-CAR Canada design system: tokens */
+@font-face{font-family:"Source Sans 3";src:url(assets/fonts/SourceSans3-400-normal.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Source Sans 3";src:url(assets/fonts/SourceSans3-600-normal.woff2) format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Source Sans 3";src:url(assets/fonts/SourceSans3-700-normal.woff2) format("woff2");font-weight:700;font-style:normal;font-display:swap}
 :root{
-  --bg:#f5f6f8; --surface:#ffffff; --surface-2:#f0f2f5; --text:#16191f; --muted:#5b6370;
-  --line:#dde1e7; --accent:#C8102E; --accent-ink:#ffffff; --accent-soft:#fbe9ec;
-  --ok:#137a3f; --ok-soft:#e5f4ea; --warn:#9a5b00; --warn-soft:#fdf2df; --err:#b42318; --err-soft:#fdecea;
-  --radius:10px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
-  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --surface:#ffffff; --ink:#000000; --ink-muted:#575e69; --on-brand:#ffffff;
+  --icar-blue:#006cb4; --icar-blue-edge:#00365a; --icar-blue-25:#bac9e6; --navy:#003663; --sky-25:#d7e3f4;
+  --charcoal:#575e69; --charcoal-25:#c9cdd3; --gray-25:#dfe2e5; --tan-25:#f1f1ef;
+  --gold-class:#a39053; --gc-brown:#1f1a00; --platinum:#a7a9ac;
+  --green:#367c53; --green-25:#c5d3c6; --red:#c5351c; --red-25:#f0c4ae; --sunshine-25:#fce7c3; --orange:#f47920;
+  --rule:var(--icar-blue); --link:var(--icar-blue); --focus-ring:var(--navy);
+  --font-web:"Source Sans 3","Source Sans Pro",Arial,sans-serif;
+  --space-hairline:3px; --space-xs:6px; --space-sm:12px; --space-logo:19px; --space-md:24px; --space-lg:29px; --space-xl:48px;
+  --radius-box:6px; --shadow-box:0 2px 6px rgba(0,0,0,.35); --shadow-soft:0 1px 3px rgba(0,0,0,.12);
+  --grad-blue:linear-gradient(90deg,var(--icar-blue-edge),var(--icar-blue) 40%,var(--icar-blue) 60%,var(--icar-blue-edge));
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--text);font:15px/1.5 var(--font);-webkit-font-smoothing:antialiased}
-a{color:var(--accent)}
-h1,h2,h3{line-height:1.25;margin:0 0 .4em}
-h1{font-size:1.6rem;letter-spacing:-.01em}
-h2{font-size:1.2rem}
-h3{font-size:1rem}
+body{background:var(--tan-25);color:var(--ink);font:400 17px/1.55 var(--font-web);-webkit-font-smoothing:antialiased}
+a{color:var(--link)}
+h1,h2,h3{margin:0 0 .4em;line-height:1.2}
+h1{font-size:40px;font-weight:700;line-height:1.15}
+h2{font-size:28px;font-weight:600;color:var(--icar-blue)}
+h3{font-size:20px;font-weight:600}
 p{margin:0 0 1em}
-.muted{color:var(--muted)}
-.small{font-size:.85rem}
+.muted{color:var(--ink-muted)}
+.small{font-size:14px;line-height:1.45}
 .hidden{display:none!important}
+.section-head{font-weight:700;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--icar-blue);margin:0 0 var(--space-sm)}
+.section-head .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--icar-blue);color:#fff;font-size:13px;margin-right:8px;vertical-align:1px}
 
-/* layout */
-.pub-wrap{max-width:620px;margin:0 auto;padding:28px 16px 48px}
-.brandbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem}
-.brand img{max-height:38px;max-width:180px}
-.brand .mark{width:10px;height:28px;background:var(--accent);border-radius:2px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px}
-.card + .card,.grid2 + .card,.card + .grid2,.stats + .grid2{margin-top:16px}
-.grid2 > .card{margin-top:0}
-.stack > * + *{margin-top:14px}
-.row{display:flex;gap:12px;flex-wrap:wrap}
-.row > *{flex:1 1 200px}
-.spread{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+/* header and footer */
+.site-head{background:var(--surface);border-bottom:3px solid var(--icar-blue)}
+.site-head .in{max-width:1180px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.site-head .logo{height:44px;width:auto;display:block}
+.site-head .tag{font-weight:600;color:var(--ink-muted);font-size:15px;border-left:1px solid var(--charcoal-25);padding-left:14px;margin-left:14px}
+.brand{display:flex;align-items:center}
+@media (max-width:560px){.site-head .tag{display:none}.site-head .logo{height:36px}}
+.site-foot-wrap{background:var(--surface);border-top:1px solid var(--gray-25);margin-top:var(--space-xl)}
+.site-foot{max-width:1180px;margin:0 auto;padding:24px 16px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--ink-muted)}
+.site-foot img{height:44px;width:auto;display:block}
+
+/* public page */
+.pub{max-width:760px;margin:0 auto;padding:28px 16px 0}
+.headline-box{background:var(--grad-blue);color:var(--on-brand);border-radius:var(--radius-box);box-shadow:var(--shadow-box);padding:var(--space-lg) var(--space-xl);margin-bottom:var(--space-md)}
+.headline-box h1{color:#fff;margin:0;font-size:36px}
+.headline-box hr{border:0;border-top:1px solid rgba(255,255,255,.9);margin:var(--space-sm) 0}
+.headline-box p{margin:0;font-size:19px;line-height:1.4}
+@media (max-width:560px){.headline-box{padding:var(--space-md)}.headline-box h1{font-size:28px}.headline-box p{font-size:17px}}
+.panel{background:var(--surface);border-radius:var(--radius-box);box-shadow:var(--shadow-soft);padding:var(--space-lg)}
+@media (max-width:560px){.panel{padding:var(--space-md) 18px}}
+.panel + .panel{margin-top:var(--space-md)}
+.grid2 > .panel{margin-top:0}
+.step + .step{margin-top:var(--space-lg);padding-top:var(--space-lg);border-top:1px solid var(--gray-25)}
 
 /* forms */
-label.f{display:block;font-weight:600;font-size:.9rem;margin-bottom:5px}
-.help{font-size:.8rem;color:var(--muted);margin-top:4px}
-input[type=text],input[type=email],input[type=password],input[type=search],input[type=date],select,textarea{
-  width:100%;font:inherit;color:inherit;background:var(--surface);border:1px solid #c7ccd4;border-radius:8px;padding:10px 12px;min-height:44px}
-textarea{min-height:220px;line-height:1.5;resize:vertical}
-input:focus,select:focus,textarea:focus,button:focus-visible,.choice:focus-within{outline:2px solid var(--accent);outline-offset:1px}
-.check{display:flex;gap:10px;align-items:flex-start;font-size:.9rem}
-.check input{margin-top:3px;width:18px;height:18px;flex:none}
-.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:480px){.choices{grid-template-columns:1fr}}
-.choice{position:relative;border:1.5px solid var(--line);border-radius:var(--radius);padding:14px 14px 14px 44px;cursor:pointer;background:var(--surface)}
-.choice input{position:absolute;left:14px;top:17px;width:18px;height:18px;accent-color:var(--accent)}
-.choice b{display:block}
-.choice span{font-size:.85rem;color:var(--muted)}
-.choice:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+label.f{display:block;font-weight:600;font-size:15px;margin-bottom:5px}
+.help{font-size:14px;color:var(--ink-muted);margin-top:4px;line-height:1.4}
+input[type=text],input[type=email],input[type=tel],input[type=password],input[type=search],input[type=date],select,textarea{
+  width:100%;font:inherit;font-size:17px;color:inherit;background:var(--surface);border:1px solid var(--charcoal);border-radius:var(--radius-box);padding:9px 12px;min-height:44px}
+textarea{min-height:200px;line-height:1.5;resize:vertical;font-size:15px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible,.choice:focus-within{outline:2px solid var(--focus-ring);outline-offset:2px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.row > *{flex:1 1 220px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.45}
+.check input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--icar-blue)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:520px){.choices{grid-template-columns:1fr}}
+.choice{position:relative;display:flex;gap:16px;align-items:center;border:2px solid var(--gray-25);border-radius:var(--radius-box);padding:14px 16px;cursor:pointer;background:var(--surface)}
+.choice input{position:absolute;opacity:0;pointer-events:none}
+.choice img{height:84px;width:auto;flex:none}
+.choice b{display:block;font-size:18px}
+.choice span{font-size:14px;color:var(--ink-muted);line-height:1.35;display:block}
+.choice:hover{border-color:var(--icar-blue-25)}
+.choice:has(input:checked){border-color:var(--icar-blue);box-shadow:inset 0 0 0 1px var(--icar-blue)}
+.choice:has(input:checked)::after{content:"✓";position:absolute;top:8px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--icar-blue);color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:600;border-radius:8px;border:1px solid transparent;
-  padding:10px 18px;min-height:44px;cursor:pointer;background:var(--accent);color:var(--accent-ink);text-decoration:none}
-.btn:hover{filter:brightness(.94)}
-.btn[disabled]{opacity:.55;cursor:wait}
-.btn.secondary{background:var(--surface);color:var(--text);border-color:#c7ccd4}
-.btn.ghost{background:transparent;color:var(--accent);padding:6px 10px;min-height:34px}
-.btn.sm{padding:6px 12px;min-height:34px;font-size:.85rem}
-.btn.danger{background:var(--surface);color:var(--err);border-color:#f0b4ae}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 var(--space-md);border:2px solid var(--icar-blue);border-radius:var(--radius-box);
+  font:600 17px/1 var(--font-web);cursor:pointer;background:var(--icar-blue);color:var(--on-brand);text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--navy);border-color:var(--navy)}
+.btn.secondary{background:var(--surface);color:var(--icar-blue)}
+.btn.secondary:hover{background:var(--sky-25);color:var(--navy);border-color:var(--navy)}
+.btn.sm{min-height:34px;padding:0 12px;font-size:15px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--icar-blue);padding:0 8px}
+.btn.ghost:hover{background:var(--sky-25)}
+.btn.danger{background:var(--surface);color:var(--red);border-color:var(--red)}
+.btn[disabled]{cursor:not-allowed;background:var(--gray-25);border-color:var(--gray-25);color:var(--charcoal)}
 .btn.block{width:100%}
+.btn.lg{min-height:52px;font-size:19px}
 
-.alert{border-radius:8px;padding:12px 14px;font-size:.92rem}
-.alert.err{background:var(--err-soft);color:var(--err)}
-.alert.ok{background:var(--ok-soft);color:var(--ok)}
-.alert.warn{background:var(--warn-soft);color:var(--warn)}
-.alert.info{background:var(--surface-2);color:var(--text)}
-.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em}
-.bigcode{font-size:1.35rem;font-weight:700}
-.lang-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.lang-toggle button{font:inherit;font-size:.85rem;border:0;background:var(--surface);padding:6px 12px;cursor:pointer;color:var(--muted);min-height:34px}
-.lang-toggle button.on{background:var(--text);color:#fff}
-.badge{display:inline-block;font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
-.badge.gold{background:#fbf1d6;color:#7a5600}
-.badge.plat{background:#e8ecf3;color:#36435a}
-.badge.ok{background:var(--ok-soft);color:var(--ok)}
-.badge.off{background:var(--err-soft);color:var(--err)}
-.verify-status{display:flex;gap:14px;align-items:center}
-.verify-icon{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:700;flex:none}
-.verify-icon.ok{background:var(--ok-soft);color:var(--ok)}
-.verify-icon.bad{background:var(--err-soft);color:var(--err)}
-dl.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:0}
-dl.kv dt{color:var(--muted)}
-dl.kv dd{margin:0;font-weight:600}
-footer.pub{margin-top:22px;text-align:center;font-size:.85rem;color:var(--muted)}
+.alert{border-radius:var(--radius-box);padding:12px 14px;font-size:15px;line-height:1.45}
+.alert.err{background:var(--red-25);color:#5d1608;border-left:4px solid var(--red)}
+.alert.ok{background:var(--green-25);color:#163a25;border-left:4px solid var(--green)}
+.alert.warn{background:var(--sunshine-25);color:#4d3600;border-left:4px solid var(--orange)}
+.alert.info{background:var(--sky-25);color:var(--navy);border-left:4px solid var(--icar-blue)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.03em}
+.lang-toggle{display:flex;border:1px solid var(--icar-blue);border-radius:var(--radius-box);overflow:hidden;flex:none}
+.lang-toggle button{font:600 14px var(--font-web);border:0;background:var(--surface);color:var(--icar-blue);padding:6px 12px;cursor:pointer;min-height:34px}
+.lang-toggle button.on{background:var(--icar-blue);color:#fff}
+.badge{display:inline-block;font-size:13px;font-weight:600;padding:1px 9px;border-radius:999px;background:var(--gray-25);color:var(--charcoal);white-space:nowrap;line-height:1.6}
+.badge.gold{background:#efe9d6;color:#4d4220}
+.badge.plat{background:#ebecee;color:#3a3d42}
+.badge.ok{background:var(--green-25);color:#163a25}
+.badge.blue{background:var(--sky-25);color:var(--navy)}
+.badge.warn{background:var(--sunshine-25);color:#4d3600}
+.badge.off{background:var(--red-25);color:#5d1608}
+.ready{display:flex;gap:20px;align-items:center}
+.ready img{height:110px;width:auto;flex:none}
+@media (max-width:520px){.ready{flex-direction:column;align-items:flex-start}}
+.refbox{background:var(--tan-25);border-radius:var(--radius-box);padding:12px 16px}
 
-/* admin */
-.topbar{background:var(--text);color:#fff}
-.topbar .in{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.topbar .who{font-size:.85rem;opacity:.85}
-.topright{display:flex;align-items:center;gap:8px;flex:0 0 auto}
-@media (max-width:600px){.topbar .who{display:none}}
-.topbar .btn.sm{background:transparent;border-color:rgba(255,255,255,.35);color:#fff}
-.tabs{background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto}
+/* staff */
+.tabs{background:var(--surface);border-bottom:1px solid var(--gray-25);overflow-x:auto}
 .tabs .in{max-width:1180px;margin:0 auto;padding:0 8px;display:flex;gap:2px}
-.tabs button{font:inherit;font-weight:600;font-size:.92rem;background:none;border:0;border-bottom:3px solid transparent;padding:13px 12px;cursor:pointer;color:var(--muted);white-space:nowrap}
-.tabs button.on{color:var(--text);border-bottom-color:var(--accent)}
-.adm{max-width:1180px;margin:0 auto;padding:22px 16px 60px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
-.stat .n{font-size:1.7rem;font-weight:700;letter-spacing:-.02em}
-.stat .l{font-size:.82rem;color:var(--muted)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:860px){.grid2{grid-template-columns:1fr}}
-.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
-table{width:100%;border-collapse:collapse;font-size:.88rem}
-th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
-th{background:var(--surface-2);font-weight:600;font-size:.8rem;color:var(--muted);white-space:nowrap;position:sticky;top:0}
+.tabs button{font:600 16px var(--font-web);background:none;border:0;border-bottom:3px solid transparent;padding:12px 12px 10px;cursor:pointer;color:var(--ink-muted);white-space:nowrap}
+.tabs button:hover{color:var(--navy)}
+.tabs button.on{color:var(--icar-blue);border-bottom-color:var(--icar-blue)}
+.adm{max-width:1180px;margin:0 auto;padding:24px 16px 40px}
+.whoami{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-muted);flex:none}
+@media (max-width:700px){.whoami .name{display:none}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:var(--space-md)}
+.stat{background:var(--surface);border-radius:var(--radius-box);box-shadow:var(--shadow-soft);padding:16px 18px;border-top:4px solid var(--icar-blue)}
+.stat.alt{border-top-color:var(--orange)}
+.stat .n{font-size:32px;font-weight:700;line-height:1.1}
+.stat .l{font-size:14px;color:var(--ink-muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);align-items:start}
+@media (max-width:880px){.grid2{grid-template-columns:1fr}}
+.grid2 + .panel,.panel + .grid2,.stats + .grid2{margin-top:var(--space-md)}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.tablewrap{overflow-x:auto;border:1px solid var(--gray-25);border-radius:var(--radius-box);background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--gray-25);vertical-align:top}
+th{background:var(--tan-25);font-weight:600;font-size:13px;color:var(--charcoal);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
 tr:last-child td{border-bottom:0}
 td.nowrap{white-space:nowrap}
-.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
-.filters > *{flex:0 1 auto}
+td .sub{font-size:13px;color:var(--ink-muted)}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
 .filters .grow{flex:1 1 240px}
-.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px;font-size:.88rem}
-.mapgrid{display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:8px 14px;align-items:center}
-.req{color:var(--err)}
-.ph{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:0 6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;cursor:pointer}
-.copybox{position:relative}
-.copybox textarea{min-height:160px;font-size:.88rem}
-.copybox .btn{position:absolute;top:8px;right:8px}
-.imgprev{max-height:60px;max-width:220px;border:1px dashed var(--line);border-radius:6px;padding:4px;background:#fff}
-.modal-bg{position:fixed;inset:0;background:rgba(16,24,40,.45);display:grid;place-items:center;padding:16px;z-index:50}
-.modal{background:var(--surface);border-radius:12px;max-width:480px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:600 15px var(--font-web);border:1px solid var(--charcoal-25);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer;min-height:36px}
+.chip .c{color:var(--ink-muted);font-weight:400;margin-left:4px}
+.chip.on{background:var(--icar-blue);border-color:var(--icar-blue);color:#fff}
+.chip.on .c{color:#d7e3f4}
+.seg{display:inline-flex;border:2px solid var(--icar-blue);border-radius:var(--radius-box);overflow:hidden}
+.seg button{font:600 16px var(--font-web);border:0;background:var(--surface);color:var(--icar-blue);padding:8px 16px;cursor:pointer}
+.seg button.on{background:var(--icar-blue);color:#fff}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px;font-size:15px}
+.mapgrid{display:grid;grid-template-columns:minmax(150px,240px) 1fr;gap:8px 16px;align-items:center}
+@media (max-width:560px){.mapgrid{grid-template-columns:1fr}}
+.req{color:var(--red)}
+.ph{display:inline-block;background:var(--tan-25);border:1px solid var(--charcoal-25);border-radius:4px;padding:0 6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;cursor:pointer;margin:2px 0}
+.copyrow{display:flex;gap:8px}
+.copyrow input{flex:1;font-size:15px}
+.imgprev{max-height:56px;max-width:220px;border:1px dashed var(--charcoal-25);border-radius:4px;padding:4px;background:#fff}
+.modal-bg{position:fixed;inset:0;background:rgba(0,26,48,.5);display:grid;place-items:center;padding:16px;z-index:50;overflow-y:auto}
+.modal{background:var(--surface);border-radius:var(--radius-box);max-width:500px;width:100%;padding:var(--space-lg);box-shadow:var(--shadow-box);border-top:4px solid var(--icar-blue)}
+.modal.wide{max-width:880px}
+.modal .x{float:right;margin:-8px -8px 0 0}
+.history{list-style:none;margin:0;padding:0;font-size:14px}
+.history li{padding:8px 0;border-bottom:1px solid var(--gray-25)}
+.history li:last-child{border-bottom:0}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
-#toast div{background:var(--text);color:#fff;padding:10px 16px;border-radius:8px;font-size:.9rem;box-shadow:var(--shadow);max-width:90vw}
-#toast div.err{background:var(--err)}
+#toast div{background:var(--navy);color:#fff;padding:10px 18px;border-radius:var(--radius-box);font-size:15px;box-shadow:var(--shadow-box);max-width:90vw}
+#toast div.err{background:var(--red)}
 .spinner{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
-.center{display:grid;place-items:center;min-height:60vh}
+.center{display:grid;place-items:center;min-height:50vh}
 </style>
 </head>
 <body>
-<div id="app"><div class="center"><span class="spinner"></span></div></div>
+<div id="app"><div class="center"><span class="spinner" style="color:#006cb4"></span></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 /* =====================================================================
    I-CAR Canada Recognition Letters
-   Customer page:   index.html            (or ?program=gold_class&id=12345&lang=fr)
-   Verify page:     index.html#/verify/CODE
+   Customer page:   index.html        (personal link: ?program=gold_class&id=12345&lang=fr)
    Staff back end:  index.html#/admin
    ===================================================================== */
 const CONFIG = {
   SUPABASE_URL: 'https://fwtzwkdcxkcnscqkyxhf.supabase.co',
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dHp3a2RjeGtjbnNjcWt5eGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjczNTgsImV4cCI6MjEwODYwMzM1OH0.p3WJnw5_Y4-Lk0kYU6JW_lzor6r7DC1GcfQEuLUF1KQ',
   STAFF_EMAIL_DOMAIN: 'aiacanada.com',
-  // Leave blank to use this page's own address in QR codes and share links.
+  // Leave blank to use this page's own address in the links the team sends.
   PUBLIC_URL: ''
 };
 const XLSX_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+const ASSET = {
+  logo: 'assets/icar-canada-logo.svg',
+  logoPng: 'assets/icar-canada-logo.png',
+  gold_class: { en: 'assets/gold-class-en.png', fr: 'assets/gold-class-fr.png' },
+  platinum: { en: 'assets/platinum-en.png', fr: 'assets/platinum-fr.png' }
+};
 
 const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 const app = document.getElementById('app');
@@ -166,241 +210,189 @@ const app = document.getElementById('app');
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-function toast(msg, kind = '') {
-  const d = document.createElement('div'); d.textContent = msg; if (kind) d.className = kind;
-  $('#toast').appendChild(d); setTimeout(() => d.remove(), kind === 'err' ? 6000 : 3200);
-}
-function publicUrl() { return (CONFIG.PUBLIC_URL || (location.origin + location.pathname)).replace(/#.*$/, ''); }
-function verifyUrl(code) { return publicUrl() + '#/verify/' + encodeURIComponent(code); }
+function toast(msg, kind = '') { const d = document.createElement('div'); d.textContent = msg; if (kind) d.className = kind; $('#toast').appendChild(d); setTimeout(() => d.remove(), kind === 'err' ? 6000 : 3000); }
+function publicUrl() { return (CONFIG.PUBLIC_URL || (location.origin + location.pathname)).replace(/[?#].*$/, ''); }
+function personalLink(program, icarId, lang) { const p = new URLSearchParams({ program, id: icarId }); if (lang === 'fr') p.set('lang', 'fr'); return publicUrl() + '?' + p.toString(); }
 function parseDate(d) { if (!d) return null; if (d instanceof Date) return d; return new Date(/^\d{4}-\d{2}-\d{2}$/.test(d) ? d + 'T12:00:00' : d); }
 function fmtDate(d, lang = 'en') { const dt = parseDate(d); if (!dt || isNaN(dt)) return ''; return dt.toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { year: 'numeric', month: 'long', day: 'numeric' }); }
+function fmtShort(d) { const dt = parseDate(d); return dt ? dt.toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }) : ''; }
 function fmtDateTime(d) { const dt = parseDate(d); return dt ? dt.toLocaleString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''; }
 function busy(btn, on, label) { if (!btn) return; if (on) { btn.dataset.l = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ' + esc(label || ''); } else { btn.disabled = false; if (btn.dataset.l) btn.innerHTML = btn.dataset.l; } }
-async function copyText(t) { try { await navigator.clipboard.writeText(t); toast('Copied'); } catch { toast('Copy failed. Select the text and copy it manually.', 'err'); } }
+async function copyText(t, what = 'Copied') { try { await navigator.clipboard.writeText(t); toast(what); } catch { toast('Copy failed. Select the text and copy it manually.', 'err'); } }
 function loadScript(src) { return new Promise((res, rej) => { if ([...document.scripts].some(s => s.src === src)) return res(); const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load ' + src)); document.head.appendChild(s); }); }
-function applyAccent(hex) { if (/^#[0-9a-f]{6}$/i.test(hex || '')) { document.documentElement.style.setProperty('--accent', hex); const n = parseInt(hex.slice(1), 16); document.documentElement.style.setProperty('--accent-soft', `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},.08)`); } }
+function csvDownload(rows, cols, name) {
+  const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const csv = '﻿' + [cols.map(c => c[1]).join(','), ...rows.map(r => cols.map(([k, , f]) => cell(f ? f(r) : r[k])).join(','))].join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
 const PROGRAM = {
-  gold_class: { en: 'Gold Class', fr: 'Gold Class', badge: 'gold', slug: 'Gold-Class' },
-  platinum: { en: 'Platinum', fr: 'Platinum', badge: 'plat', slug: 'Platinum' }
+  gold_class: { en: 'Gold Class', fr: 'Gold Class', mark: 'Gold Class®', badge: 'gold', slug: 'Gold-Class' },
+  platinum: { en: 'Platinum', fr: 'Platinum', mark: 'Platinum™', badge: 'plat', slug: 'Platinum' }
 };
 
-/* ---------- letter content ---------- */
+/* ---------- letter content (wording, signatory, signature) ---------- */
 let CONTENT = null;
 async function loadContent(force = false) {
-  if (!CONTENT || force) {
-    const { data, error } = await sb.rpc('get_letter_content');
-    if (error) throw error;
-    CONTENT = data || { settings: {}, templates: [] };
-    applyAccent(CONTENT.settings?.accent_color);
-  }
+  if (!CONTENT || force) { const { data, error } = await sb.rpc('get_letter_content'); if (error) throw error; CONTENT = data || { settings: {}, templates: [] }; }
   return CONTENT;
 }
 
-/* ---------- PDF letter ---------- */
-const PDF_T = {
-  en: { box: 'Verify this letter', code: 'Verification code', scan: 'Scan the QR code or visit:', issued: 'Issued' },
-  fr: { box: 'Vérifier cette lettre', code: 'Code de vérification', scan: 'Balayez le code QR ou visitez :', issued: 'Émise le' }
-};
-function fill(t, v) { return String(t || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (m, k) => (v[k] ?? '')); }
-function rgb(hex) { const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); const n = parseInt(m ? m[1] : 'C8102E', 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
-function imgFmt(u) { return /^data:image\/png/i.test(u) ? 'PNG' : 'JPEG'; }
-function imgDims(src) { return new Promise(r => { const i = new Image(); i.onload = () => r({ w: i.naturalWidth, h: i.naturalHeight }); i.onerror = () => r(null); i.src = src; }); }
-function drawQR(doc, text, x, y, size) {
-  const qr = qrcode(0, 'M'); qr.addData(text); qr.make();
-  const n = qr.getModuleCount(), c = size / n;
-  doc.setFillColor(255, 255, 255); doc.rect(x - 3, y - 3, size + 6, size + 6, 'F');
-  doc.setFillColor(0, 0, 0);
-  for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (qr.isDark(r, k)) doc.rect(x + k * c, y + r * c, c + 0.05, c + 0.05, 'F');
+/* ---------- PDF letter (I-CAR letterhead) ---------- */
+const IMG_CACHE = {};
+async function imgData(src) {
+  if (!src) return null;
+  if (src.startsWith('data:')) return src;
+  if (!IMG_CACHE[src]) IMG_CACHE[src] = fetch(src).then(r => { if (!r.ok) throw new Error(src); return r.blob(); })
+    .then(b => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); })).catch(() => null);
+  return IMG_CACHE[src];
 }
+function imgDims(src) { return new Promise(r => { const i = new Image(); i.onload = () => r({ w: i.naturalWidth, h: i.naturalHeight }); i.onerror = () => r(null); i.src = src; }); }
+function fill(t, v) { return String(t || '').replace(/\{\{\s*(\w+)\s*\}\}/g, (m, k) => (v[k] ?? '')); }
+const BLUE = [0, 108, 180], CHARCOAL = [87, 94, 105];
+const PDF_T = { en: { ref: 'Letter reference' }, fr: { ref: 'Référence de la lettre' } };
 
 /* L = { program, language, name, icar_id, shop_name, address, city, province, postal_code, recognition_date, issued_at, code } */
 async function buildLetterPdf(L, content) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const doc = new jsPDF({ unit: 'pt', format: 'letter', compress: true });
   const S = content.settings || {};
   const lang = L.language === 'fr' ? 'fr' : 'en';
   const tpl = (content.templates || []).find(t => t.program === L.program && t.language === lang) || { heading: '', body: '' };
-  const A = rgb(S.accent_color);
-  const W = 612, H = 792, M = 72, CW = W - 2 * M;
+  const W = 612, H = 792, M = 72, CW = W - 2 * M, BOTTOM = H - 108;   // letterhead: 1in sides, 1.5in bottom
   const issued = L.issued_at ? parseDate(L.issued_at) : new Date();
-  const v = {
-    name: L.name || '', icar_id: L.icar_id || '', shop_name: L.shop_name || '',
-    date: fmtDate(issued, lang), recognition_date: L.recognition_date ? fmtDate(L.recognition_date, lang) : '',
-    program: PROGRAM[L.program]?.[lang] || ''
+  const v = { name: L.name || '', icar_id: L.icar_id || '', shop_name: L.shop_name || '', date: fmtDate(issued, lang),
+    recognition_date: L.recognition_date ? fmtDate(L.recognition_date, lang) : '', program: PROGRAM[L.program]?.[lang] || '' };
+  doc.setProperties({ title: fill(tpl.heading, v), author: 'I-CAR Canada', subject: v.name });
+
+  const [logo, prog, sig] = await Promise.all([imgData(ASSET.logoPng), imgData(ASSET[L.program]?.[lang]), imgData(S.signature_data)]);
+  const header = async () => {
+    if (logo) { const d = await imgDims(logo); const w = 92, h = w * d.h / d.w; doc.addImage(logo, 'PNG', M, 44, w, h, 'icar-logo', 'FAST'); }   // 1.28in letterhead logo
+    if (prog) { const d = await imgDims(prog); const h = 64, w = h * d.w / d.h; doc.addImage(prog, 'PNG', W - M - w, 34, w, h, 'prog-logo', 'FAST'); } // program logo, 0.9in tall
+    doc.setDrawColor(...BLUE); doc.setLineWidth(1); doc.line(M, 112, W - M, 112);
   };
-  doc.setProperties({ title: fill(tpl.heading, v), author: S.org_name || 'I-CAR Canada', subject: v.name });
-
-  const footer = () => {
-    if (!S.footer_text) return;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(120, 120, 120);
-    doc.text(S.footer_text, W / 2, H - 28, { align: 'center' });
+  const footer = (page, pages) => {
+    doc.setDrawColor(...BLUE); doc.setLineWidth(1); doc.line(M, H - 72, W - M, H - 72);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CHARCOAL);
+    if (S.footer_text) doc.text(S.footer_text, M, H - 58);
+    const right = [L.code ? `${PDF_T[lang].ref}: ${L.code}` : '', pages > 1 ? `${page}/${pages}` : ''].filter(Boolean).join('   ');
+    if (right) doc.text(right, W - M, H - 58, { align: 'right' });
   };
-  const newPage = () => { footer(); doc.addPage(); return 72; };
+  await header();
+  let y = 126 + 10;   // 1.75in top margin
+  const body = () => { doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(0, 0, 0); };
+  const LH = 14.5;
+  const newPage = async () => { doc.addPage(); await header(); body(); return 136; };
 
-  let y = 50;
-  let drewLogo = false;
-  if (S.logo_data) {
-    const d = await imgDims(S.logo_data);
-    if (d) { let h = 46, w = h * d.w / d.h; if (w > 220) { w = 220; h = w * d.h / d.w; } doc.addImage(S.logo_data, imgFmt(S.logo_data), M, y, w, h); y += h; drewLogo = true; }
-  }
-  if (!drewLogo) { doc.setFont('helvetica', 'bold'); doc.setFontSize(19); doc.setTextColor(...A); doc.text(S.org_name || 'I-CAR Canada', M, y + 22); y += 30; }
-  y += 14; doc.setDrawColor(...A); doc.setLineWidth(2); doc.line(M, y, W - M, y); y += 34;
-
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(28, 28, 28);
-  doc.text(v.date, M, y); y += 28;
-
+  body(); doc.text(v.date, M, y); y += LH * 2;
   const addr = [];
   if (L.program === 'platinum' && L.shop_name) addr.push(L.shop_name);
   if (L.address) addr.push(L.address);
   const cityLine = ([L.city, L.province].filter(Boolean).join(', ') + (L.postal_code ? '  ' + L.postal_code : '')).trim();
   if (cityLine) addr.push(cityLine);
-  doc.setFont('helvetica', 'bold'); doc.text(doc.splitTextToSize(v.name, CW)[0], M, y); y += 15;
-  doc.setFont('helvetica', 'normal'); for (const a of addr) { doc.text(doc.splitTextToSize(a, CW)[0], M, y); y += 15; }
-  y += 20;
+  doc.setFont('helvetica', 'bold'); doc.text(doc.splitTextToSize(v.name, CW)[0], M, y); y += LH;
+  body(); for (const a of addr) { doc.text(doc.splitTextToSize(a, CW)[0], M, y); y += LH; }
+  y += LH;
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...A);
-  for (const line of doc.splitTextToSize(fill(tpl.heading, v), CW)) { doc.text(line, M, y); y += 18; }
-  y += 10;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...BLUE);
+  for (const line of doc.splitTextToSize(fill(tpl.heading, v), CW)) { doc.text(line, M, y); y += 17; }
+  y += 8; body();
 
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(28, 28, 28);
   for (const p of fill(tpl.body, v).split(/\n\s*\n/)) {
     const txt = p.replace(/\s*\n\s*/g, ' ').trim(); if (!txt) continue;
-    for (const line of doc.splitTextToSize(txt, CW)) { if (y > H - 96) { y = newPage(); doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(28, 28, 28); } doc.text(line, M, y); y += 15.5; }
-    y += 9;
+    for (const line of doc.splitTextToSize(txt, CW)) { if (y > BOTTOM) y = await newPage(); doc.text(line, M, y); y += LH; }
+    y += 7;
   }
-
-  // signature block, then the verification panel at the foot of the last page
-  const PANEL_TOP = H - 132;
-  if (y + 84 > PANEL_TOP - 8) y = newPage();
-  if (S.signature_data) {
-    const d = await imgDims(S.signature_data);
-    if (d) { let h = 40, w = h * d.w / d.h; if (w > 180) { w = 180; h = w * d.h / d.w; } doc.addImage(S.signature_data, imgFmt(S.signature_data), M, y - 6, w, h); y += h + 4; }
-  } else y += 26;
-  doc.setTextColor(28, 28, 28);
-  if (S.signatory_name) { doc.setFont('helvetica', 'bold'); doc.text(S.signatory_name, M, y); y += 15; }
-  const sigTitle = lang === 'fr' ? S.signatory_title_fr : S.signatory_title_en;
-  if (sigTitle) { doc.setFont('helvetica', 'normal'); doc.text(sigTitle, M, y); y += 15; }
-
-  if (L.code) {
-    const P = PDF_T[lang], bx = M, by = PANEL_TOP, bw = CW, bh = 82, url = verifyUrl(L.code);
-    doc.setFillColor(245, 246, 248); doc.setDrawColor(221, 225, 231); doc.setLineWidth(0.8);
-    doc.roundedRect(bx, by, bw, bh, 6, 6, 'FD');
-    drawQR(doc, url, bx + 12, by + 11, 60);
-    const tx = bx + 90;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...A); doc.text(P.box, tx, by + 20);
-    doc.setTextColor(28, 28, 28); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-    doc.text(`${P.code}: `, tx, by + 35);
-    const cw = doc.getTextWidth(`${P.code}: `);
-    doc.setFont('courier', 'bold'); doc.setFontSize(10.5); doc.text(L.code, tx + cw, by + 35);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(80, 80, 80);
-    doc.text(P.scan, tx, by + 49);
-    doc.setTextColor(...A); doc.text(doc.splitTextToSize(url, bw - 100)[0], tx, by + 61);
-    doc.setTextColor(80, 80, 80); doc.text(`${P.issued} ${v.date}`, tx, by + 73);
-  }
-  footer();
+  if (y + 80 > BOTTOM) y = await newPage();
+  if (sig) { const d = await imgDims(sig); if (d) { let h = 38, w = h * d.w / d.h; if (w > 170) { w = 170; h = w * d.h / d.w; } doc.addImage(sig, sig.startsWith('data:image/png') ? 'PNG' : 'JPEG', M, y - 4, w, h); y += h + 6; } } else y += 28;
+  if (S.signatory_name) { doc.setFont('helvetica', 'bold'); doc.text(S.signatory_name, M, y); y += LH; }
+  const title = lang === 'fr' ? S.signatory_title_fr : S.signatory_title_en;
+  if (title) { body(); doc.text(title, M, y); }
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) { doc.setPage(i); footer(i, pages); }
   return doc;
 }
-function letterFilename(L) { return `I-CAR-${PROGRAM[L.program]?.slug || 'Recognition'}-Letter-${String(L.icar_id || '').replace(/[^A-Za-z0-9-]/g, '')}${L.code ? '-' + L.code : ''}.pdf`; }
+function letterFilename(L) { return `I-CAR-${PROGRAM[L.program]?.slug || 'Recognition'}-Letter-${String(L.icar_id || '').replace(/[^A-Za-z0-9-]/g, '')}.pdf`; }
 
 /* =====================================================================
-   PUBLIC PAGES
+   CUSTOMER PAGE
    ===================================================================== */
 const T = {
   en: {
-    title: 'Request your I-CAR recognition letter',
-    intro: 'Gold Class businesses and Platinum individuals can download an official letter confirming their I-CAR recognition at any time.',
-    choose: 'Which recognition is this for?',
-    gold: 'Gold Class', goldSub: 'For collision repair businesses',
-    plat: 'Platinum', platSub: 'For individual technicians and professionals',
-    icarId: 'I-CAR ID', icarHelpGold: "Your business's I-CAR ID", icarHelpPlat: 'Your personal I-CAR ID',
+    tag: 'Recognition letters',
+    title: 'Your I-CAR® recognition letter',
+    intro: 'Download an official letter confirming your Gold Class® or Platinum™ recognition, in English or French.',
+    s1: 'Choose your recognition', s2: 'Confirm it’s you', s3: 'Your contact details',
+    gold: 'Gold Class®', goldSub: 'For collision repair businesses',
+    plat: 'Platinum™', platSub: 'For individual technicians and professionals',
+    icarId: 'I-CAR ID', icarHelpGold: 'Your business’s I-CAR ID', icarHelpPlat: 'Your personal I-CAR ID',
     postal: 'Business postal code', postalHelp: 'The postal code I-CAR has on file for your business',
     last: 'Last name', lastHelp: 'As it appears on your I-CAR profile',
-    you: 'Your contact details', yourName: 'Your name', yourEmail: 'Your email',
+    yourName: 'Your name', yourEmail: 'Your email',
     letterLang: 'Letter language', english: 'English', french: 'French',
     consent: 'Yes, send me I-CAR Canada news, training updates and offers by email. I can unsubscribe at any time.',
     privacy: 'We record your name and email with each request so I-CAR Canada can keep track of the letters it issues.',
-    submit: 'Get my letter', working: 'Checking…', making: 'Preparing your letter…',
+    submit: 'Download my letter', working: 'Checking…', making: 'Preparing your letter…',
     readyTitle: 'Your letter is ready',
     readyBody: n => `The recognition letter for ${n} has been downloaded to your device.`,
+    ref: 'Letter reference', refNote: 'Quote this reference if you contact I-CAR Canada about your letter.',
     again: 'Download again', another: 'Request another letter',
-    codeLabel: 'Verification code',
-    verifyNote: 'Anyone you share the letter with can confirm it is authentic by scanning its QR code or entering this code on the verification page.',
     checkGold: 'the postal code', checkPlat: 'the last name',
     err: {
-      not_found: 'We couldn’t find a match. Check the I-CAR ID and {check}, and make sure you chose the right recognition type. If your recognition is recent, our list may not be updated yet. Please contact us.',
+      not_found: 'We couldn’t find a match. Check the I-CAR ID and {check}, and make sure you chose the right recognition. If your recognition is recent, our list may not be updated yet. Please contact us.',
       too_many_attempts: 'Too many attempts for this I-CAR ID. Please try again in an hour or contact us.',
       invalid_contact: 'Enter your name and a valid email address.',
       missing_fields: 'Enter the I-CAR ID and {check}.',
       generic: 'Something went wrong. Please try again.'
     },
-    contact: 'Questions? Contact', verifyLink: 'Verify a letter', requestLink: 'Request a letter',
-    vTitle: 'Verify an I-CAR recognition letter', vEnter: 'Verification code', vHelp: 'Printed beside the QR code on the letter, e.g. 4F2A9-C81D0', vBtn: 'Verify',
-    vValid: 'Authentic letter', vValidBody: n => `This letter was issued by ${n}.`,
-    vTo: 'Issued to', vProg: 'Recognition', vId: 'I-CAR ID', vOn: 'Issued on', vNow: 'Current status',
-    vYes: 'Currently recognized', vNo: 'Not on the current recognition list',
-    vNoNote: 'The recognition may have lapsed since the letter was issued, or the list may not be updated yet.',
-    vBad: 'No letter found', vBadBody: 'No letter matches this code. Check the code for typos, or contact us.'
+    contact: 'Questions? Contact', rights: 'I-CAR Canada', licence: 'Licensed by AIA Canada'
   },
   fr: {
-    title: 'Demandez votre lettre de reconnaissance I-CAR',
-    intro: 'Les entreprises Gold Class et les personnes Platinum peuvent télécharger en tout temps une lettre officielle confirmant leur reconnaissance I-CAR.',
-    choose: 'Pour quelle reconnaissance?',
-    gold: 'Gold Class', goldSub: 'Pour les entreprises de réparation de carrosserie',
-    plat: 'Platinum', platSub: 'Pour les techniciens et les professionnels',
+    tag: 'Lettres de reconnaissance',
+    title: 'Votre lettre de reconnaissance I-CAR®',
+    intro: 'Téléchargez une lettre officielle confirmant votre reconnaissance Gold Class® ou Platinum™, en français ou en anglais.',
+    s1: 'Choisissez votre reconnaissance', s2: 'Confirmez votre identité', s3: 'Vos coordonnées',
+    gold: 'Gold Class®', goldSub: 'Pour les entreprises de réparation de carrosserie',
+    plat: 'Platinum™', platSub: 'Pour les techniciens et les professionnels',
     icarId: 'Numéro I-CAR', icarHelpGold: 'Le numéro I-CAR de votre entreprise', icarHelpPlat: 'Votre numéro I-CAR personnel',
     postal: 'Code postal de l’entreprise', postalHelp: 'Le code postal inscrit au dossier I-CAR de votre entreprise',
     last: 'Nom de famille', lastHelp: 'Tel qu’il figure à votre profil I-CAR',
-    you: 'Vos coordonnées', yourName: 'Votre nom', yourEmail: 'Votre courriel',
+    yourName: 'Votre nom', yourEmail: 'Votre courriel',
     letterLang: 'Langue de la lettre', english: 'Anglais', french: 'Français',
     consent: 'Oui, envoyez-moi par courriel les nouvelles, les mises à jour sur la formation et les offres d’I-CAR Canada. Je peux me désabonner en tout temps.',
     privacy: 'Nous consignons votre nom et votre courriel avec chaque demande afin qu’I-CAR Canada puisse faire le suivi des lettres émises.',
-    submit: 'Obtenir ma lettre', working: 'Vérification…', making: 'Préparation de votre lettre…',
+    submit: 'Télécharger ma lettre', working: 'Vérification…', making: 'Préparation de votre lettre…',
     readyTitle: 'Votre lettre est prête',
     readyBody: n => `La lettre de reconnaissance de ${n} a été téléchargée sur votre appareil.`,
+    ref: 'Référence de la lettre', refNote: 'Mentionnez cette référence si vous communiquez avec I-CAR Canada au sujet de votre lettre.',
     again: 'Télécharger de nouveau', another: 'Demander une autre lettre',
-    codeLabel: 'Code de vérification',
-    verifyNote: 'Toute personne à qui vous remettez la lettre peut en confirmer l’authenticité en balayant le code QR ou en entrant ce code sur la page de vérification.',
     checkGold: 'le code postal', checkPlat: 'le nom de famille',
     err: {
-      not_found: 'Aucune correspondance trouvée. Vérifiez le numéro I-CAR et {check}, et assurez-vous d’avoir choisi le bon type de reconnaissance. Si votre reconnaissance est récente, notre liste n’est peut-être pas encore à jour. Veuillez communiquer avec nous.',
+      not_found: 'Aucune correspondance trouvée. Vérifiez le numéro I-CAR et {check}, et assurez-vous d’avoir choisi la bonne reconnaissance. Si votre reconnaissance est récente, notre liste n’est peut-être pas encore à jour. Veuillez communiquer avec nous.',
       too_many_attempts: 'Trop de tentatives pour ce numéro I-CAR. Réessayez dans une heure ou communiquez avec nous.',
       invalid_contact: 'Entrez votre nom et une adresse courriel valide.',
       missing_fields: 'Entrez le numéro I-CAR et {check}.',
       generic: 'Une erreur est survenue. Veuillez réessayer.'
     },
-    contact: 'Des questions? Écrivez à', verifyLink: 'Vérifier une lettre', requestLink: 'Demander une lettre',
-    vTitle: 'Vérifier une lettre de reconnaissance I-CAR', vEnter: 'Code de vérification', vHelp: 'Imprimé à côté du code QR sur la lettre, p. ex. 4F2A9-C81D0', vBtn: 'Vérifier',
-    vValid: 'Lettre authentique', vValidBody: n => `Cette lettre a été émise par ${n}.`,
-    vTo: 'Émise à', vProg: 'Reconnaissance', vId: 'Numéro I-CAR', vOn: 'Émise le', vNow: 'Statut actuel',
-    vYes: 'Reconnaissance en vigueur', vNo: 'Absent de la liste de reconnaissance actuelle',
-    vNoNote: 'La reconnaissance a peut-être expiré depuis l’émission de la lettre, ou la liste n’est pas encore à jour.',
-    vBad: 'Aucune lettre trouvée', vBadBody: 'Aucune lettre ne correspond à ce code. Vérifiez le code ou communiquez avec nous.'
+    contact: 'Des questions? Écrivez à', rights: 'I-CAR Canada', licence: 'Autorisé sous licence par l’AIA Canada'
   }
 };
 const QS = new URLSearchParams(location.search);
 let LANG = QS.get('lang') === 'fr' || (!QS.get('lang') && /^fr/i.test(navigator.language || '')) ? 'fr' : 'en';
-let PUB = { program: /^plat/i.test(QS.get('program') || '') ? 'platinum' : (/^gold/i.test(QS.get('program') || '') ? 'gold_class' : 'gold_class'), result: null, form: { icar_id: QS.get('id') || '' } };
+let PUB = { program: /^plat/i.test(QS.get('program') || '') ? 'platinum' : 'gold_class', result: null, form: { icar_id: QS.get('id') || '' } };
 
+function siteHead(right, tag) {
+  return `<header class="site-head"><div class="in"><div class="brand"><img class="logo" src="${ASSET.logo}" alt="I-CAR Canada"><span class="tag">${esc(tag)}</span></div>${right}</div></header>`;
+}
+function langToggle() { return `<div class="lang-toggle" role="group" aria-label="Language / Langue"><button data-lang="en" class="${LANG === 'en' ? 'on' : ''}" lang="en">English</button><button data-lang="fr" class="${LANG === 'fr' ? 'on' : ''}" lang="fr">Français</button></div>`; }
 function pubShell(inner) {
   const S = CONTENT?.settings || {}, t = T[LANG];
   document.documentElement.lang = LANG;
-  return `<div class="pub-wrap">
-    <div class="brandbar">
-      <div class="brand">${S.logo_data ? `<img src="${esc(S.logo_data)}" alt="${esc(S.org_name || 'I-CAR Canada')}">` : `<span class="mark"></span>${esc(S.org_name || 'I-CAR Canada')}`}</div>
-      <div class="lang-toggle" role="group" aria-label="Language / Langue">
-        <button data-lang="en" class="${LANG === 'en' ? 'on' : ''}">English</button><button data-lang="fr" class="${LANG === 'fr' ? 'on' : ''}">Français</button>
-      </div>
-    </div>
-    ${inner}
-    <footer class="pub">
-      ${S.support_email ? `${esc(t.contact)} <a href="mailto:${esc(S.support_email)}">${esc(S.support_email)}</a> · ` : ''}
-      ${location.hash.startsWith('#/verify') ? `<a href="#/">${esc(t.requestLink)}</a>` : `<a href="#/verify">${esc(t.verifyLink)}</a>`}
-    </footer>
-  </div>`;
+  return `${siteHead(langToggle(), t.tag)}
+    <main class="pub">${inner}</main>
+    <div class="site-foot-wrap"><footer class="site-foot"><img src="${ASSET.logo}" alt="I-CAR Canada">
+      <div>${S.support_email ? `${esc(t.contact)} <a href="mailto:${esc(S.support_email)}">${esc(S.support_email)}</a><br>` : ''}© ${new Date().getFullYear()} ${esc(t.rights)} · ${esc(t.licence)}</div></footer></div>`;
 }
-function bindLang(rerender) {
-  $$('[data-lang]').forEach(b => b.onclick = () => { savePubForm(); LANG = b.dataset.lang; rerender(); });
-}
+function bindLang(rerender) { $$('[data-lang]').forEach(b => b.onclick = () => { savePubForm(); LANG = b.dataset.lang; rerender(); }); }
 function savePubForm() {
   const f = $('#reqForm'); if (!f) return;
   const fd = new FormData(f);
@@ -411,42 +403,40 @@ function savePubForm() {
 function renderRequest() {
   const t = T[LANG], f = PUB.form, gold = PUB.program === 'gold_class';
   if (PUB.result) return renderReady();
+  const ll = f.letter_lang || LANG;
   app.innerHTML = pubShell(`
-    <div class="card">
-      <h1>${esc(t.title)}</h1>
-      <p class="muted">${esc(t.intro)}</p>
-      <form id="reqForm" class="stack" novalidate>
-        <fieldset style="border:0;padding:0;margin:0">
-          <legend class="f" style="font-weight:600;font-size:.9rem;margin-bottom:6px">${esc(t.choose)}</legend>
-          <div class="choices">
-            <label class="choice"><input type="radio" name="program" value="gold_class" ${gold ? 'checked' : ''}><b>${esc(t.gold)}</b><span>${esc(t.goldSub)}</span></label>
-            <label class="choice"><input type="radio" name="program" value="platinum" ${!gold ? 'checked' : ''}><b>${esc(t.plat)}</b><span>${esc(t.platSub)}</span></label>
-          </div>
-        </fieldset>
+    <div class="headline-box"><h1>${esc(t.title)}</h1><hr><p>${esc(t.intro)}</p></div>
+    <form id="reqForm" class="panel" novalidate>
+      <fieldset class="step" style="border:0;padding:0;margin:0">
+        <legend class="section-head"><span class="n">1</span>${esc(t.s1)}</legend>
+        <div class="choices">
+          <label class="choice"><input type="radio" name="program" value="gold_class" ${gold ? 'checked' : ''}><img src="${ASSET.gold_class[LANG]}" alt=""><div><b>${esc(t.gold)}</b><span>${esc(t.goldSub)}</span></div></label>
+          <label class="choice"><input type="radio" name="program" value="platinum" ${!gold ? 'checked' : ''}><img src="${ASSET.platinum[LANG]}" alt=""><div><b>${esc(t.plat)}</b><span>${esc(t.platSub)}</span></div></label>
+        </div>
+      </fieldset>
+      <div class="step">
+        <h2 class="section-head"><span class="n">2</span>${esc(t.s2)}</h2>
         <div class="row">
-          <div><label class="f" for="icar_id">${esc(t.icarId)}</label>
-            <input id="icar_id" name="icar_id" type="text" autocomplete="off" value="${esc(f.icar_id)}" required>
+          <div><label class="f" for="icar_id">${esc(t.icarId)}</label><input id="icar_id" name="icar_id" type="text" autocomplete="off" value="${esc(f.icar_id)}" required>
             <div class="help">${esc(gold ? t.icarHelpGold : t.icarHelpPlat)}</div></div>
-          <div><label class="f" for="check">${esc(gold ? t.postal : t.last)}</label>
-            <input id="check" name="check" type="text" autocomplete="${gold ? 'postal-code' : 'family-name'}" value="${esc(f.check)}" required>
+          <div><label class="f" for="check">${esc(gold ? t.postal : t.last)}</label><input id="check" name="check" type="text" autocomplete="${gold ? 'postal-code' : 'family-name'}" value="${esc(f.check)}" required>
             <div class="help">${esc(gold ? t.postalHelp : t.lastHelp)}</div></div>
         </div>
-        <h3 style="margin-top:22px">${esc(t.you)}</h3>
+      </div>
+      <div class="step">
+        <h2 class="section-head"><span class="n">3</span>${esc(t.s3)}</h2>
         <div class="row">
           <div><label class="f" for="rname">${esc(t.yourName)}</label><input id="rname" name="rname" type="text" autocomplete="name" value="${esc(f.rname)}" required></div>
           <div><label class="f" for="remail">${esc(t.yourEmail)}</label><input id="remail" name="remail" type="email" autocomplete="email" value="${esc(f.remail)}" required></div>
         </div>
-        <div style="max-width:260px"><label class="f" for="letter_lang">${esc(t.letterLang)}</label>
-          <select id="letter_lang" name="letter_lang">
-            <option value="en" ${(f.letter_lang || LANG) === 'en' ? 'selected' : ''}>${esc(t.english)}</option>
-            <option value="fr" ${(f.letter_lang || LANG) === 'fr' ? 'selected' : ''}>${esc(t.french)}</option>
-          </select></div>
-        <label class="check"><input type="checkbox" name="consent" ${f.consent ? 'checked' : ''}><span>${esc(t.consent)}</span></label>
-        <p class="help" style="margin:0">${esc(t.privacy)}</p>
-        <div id="reqMsg"></div>
-        <button class="btn block" type="submit" id="reqBtn">${esc(t.submit)}</button>
-      </form>
-    </div>`);
+        <div style="max-width:260px;margin-top:14px"><label class="f" for="letter_lang">${esc(t.letterLang)}</label>
+          <select id="letter_lang" name="letter_lang"><option value="en" ${ll === 'en' ? 'selected' : ''}>${esc(t.english)}</option><option value="fr" ${ll === 'fr' ? 'selected' : ''}>${esc(t.french)}</option></select></div>
+        <label class="check" style="margin-top:16px"><input type="checkbox" name="consent" ${f.consent ? 'checked' : ''}><span>${esc(t.consent)}</span></label>
+        <p class="help" style="margin:8px 0 0">${esc(t.privacy)}</p>
+        <div id="reqMsg" style="margin-top:14px"></div>
+        <button class="btn block lg" type="submit" id="reqBtn" style="margin-top:6px">${esc(t.submit)}</button>
+      </div>
+    </form>`);
   bindLang(renderRequest);
   $$('input[name=program]').forEach(r => r.onchange = () => { savePubForm(); PUB.form.check = ''; renderRequest(); $('#icar_id').focus(); });
   $('#reqForm').onsubmit = submitRequest;
@@ -462,11 +452,8 @@ async function submitRequest(e) {
   if (!String(f.rname || '').trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(f.remail || '').trim())) return showErr('invalid_contact');
   busy(btn, true, t.working);
   try {
-    const { data, error } = await sb.rpc('request_letter', {
-      p_program: PUB.program, p_icar_id: f.icar_id, p_check: f.check,
-      p_requester_name: f.rname, p_requester_email: f.remail,
-      p_language: f.letter_lang || LANG, p_marketing_consent: !!f.consent
-    });
+    const { data, error } = await sb.rpc('request_letter', { p_program: PUB.program, p_icar_id: f.icar_id, p_check: f.check,
+      p_requester_name: f.rname, p_requester_email: f.remail, p_language: f.letter_lang || LANG, p_marketing_consent: !!f.consent });
     if (error) throw error;
     if (!data?.ok) { busy(btn, false); return showErr(data?.error || 'generic'); }
     busy(btn, true, t.making);
@@ -481,50 +468,24 @@ async function downloadLetter(r) { const doc = await buildLetterPdf(r, CONTENT);
 function renderReady() {
   const t = T[LANG], r = PUB.result;
   app.innerHTML = pubShell(`
-    <div class="card stack">
-      <div class="verify-status"><div class="verify-icon ok" aria-hidden="true">✓</div>
-        <div><h1 style="margin:0">${esc(t.readyTitle)}</h1><div class="muted">${esc(t.readyBody(r.name))}</div></div></div>
-      <div class="alert info"><div class="small muted">${esc(t.codeLabel)}</div><div class="code bigcode">${esc(r.code)}</div>
-        <div class="small" style="margin-top:6px">${esc(t.verifyNote)}</div></div>
-      <div class="row"><button class="btn" id="againBtn">${esc(t.again)}</button><button class="btn secondary" id="anotherBtn">${esc(t.another)}</button></div>
+    <div class="panel">
+      <div class="ready"><img src="${ASSET[r.program][LANG]}" alt="${esc(PROGRAM[r.program].mark)}">
+        <div><h1 style="font-size:34px;color:var(--icar-blue)">${esc(t.readyTitle)}</h1><p style="margin:0">${esc(t.readyBody(r.name))}</p></div></div>
+      <div class="refbox" style="margin-top:22px"><div class="small muted">${esc(t.ref)}</div><div class="mono" style="font-size:20px;font-weight:700">${esc(r.code)}</div><div class="small muted">${esc(t.refNote)}</div></div>
+      <div class="row" style="margin-top:22px"><button class="btn" id="againBtn">${esc(t.again)}</button><button class="btn secondary" id="anotherBtn">${esc(t.another)}</button></div>
     </div>`);
   bindLang(renderReady);
-  $('#againBtn').onclick = async e => { busy(e.currentTarget, true); try { await downloadLetter(r); } finally { busy(e.currentTarget, false); } };
+  $('#againBtn').onclick = async e => { const b = e.currentTarget; busy(b, true); try { await downloadLetter(r); } finally { busy(b, false); } };
   $('#anotherBtn').onclick = () => { PUB.result = null; PUB.form = { rname: PUB.form.rname, remail: PUB.form.remail, consent: PUB.form.consent }; renderRequest(); };
-}
-
-async function renderVerify(code) {
-  const t = T[LANG], S = CONTENT?.settings || {};
-  const form = `<form id="vForm" class="stack"><div><label class="f" for="vcode">${esc(t.vEnter)}</label>
-      <input id="vcode" name="vcode" type="text" class="code" autocomplete="off" value="${esc(code || '')}" placeholder="XXXXX-XXXXX">
-      <div class="help">${esc(t.vHelp)}</div></div><button class="btn" type="submit">${esc(t.vBtn)}</button></form>`;
-  let result = '';
-  if (code) {
-    app.innerHTML = pubShell(`<div class="card"><h1>${esc(t.vTitle)}</h1><div class="center" style="min-height:120px"><span class="spinner"></span></div></div>`);
-    const { data, error } = await sb.rpc('verify_letter', { p_code: code });
-    if (error) result = `<div class="alert err">${esc(t.err.generic)}</div>`;
-    else if (!data?.valid) result = `<div class="verify-status"><div class="verify-icon bad" aria-hidden="true">✕</div><div><h2 style="margin:0">${esc(t.vBad)}</h2><div class="muted">${esc(t.vBadBody)}</div></div></div>`;
-    else result = `<div class="verify-status"><div class="verify-icon ok" aria-hidden="true">✓</div><div><h2 style="margin:0">${esc(t.vValid)}</h2><div class="muted">${esc(t.vValidBody(S.org_name || 'I-CAR Canada'))}</div></div></div>
-      <dl class="kv" style="margin-top:16px">
-        <dt>${esc(t.vTo)}</dt><dd>${esc(data.name)}</dd>
-        <dt>${esc(t.vProg)}</dt><dd>${esc(PROGRAM[data.program]?.[LANG] || '')}</dd>
-        <dt>${esc(t.vId)}</dt><dd>${esc(data.icar_id)}</dd>
-        <dt>${esc(t.vOn)}</dt><dd>${esc(fmtDate(data.issued_at, LANG))}</dd>
-        <dt>${esc(t.vNow)}</dt><dd>${data.currently_recognized ? `<span class="badge ok">${esc(t.vYes)}</span>` : `<span class="badge off">${esc(t.vNo)}</span><div class="help" style="font-weight:400">${esc(t.vNoNote)}</div>`}</dd>
-      </dl>`;
-  }
-  app.innerHTML = pubShell(`<div class="card stack"><h1>${esc(t.vTitle)}</h1>${result ? `<div>${result}</div><hr style="border:0;border-top:1px solid var(--line);margin:18px 0">` : ''}${form}</div>`);
-  bindLang(() => renderVerify(code));
-  $('#vForm').onsubmit = e => { e.preventDefault(); const c = $('#vcode').value.trim(); if (c) location.hash = '#/verify/' + encodeURIComponent(c.toUpperCase()); };
 }
 
 /* =====================================================================
    STAFF BACK END
    ===================================================================== */
 const ADM = { session: null, staff: null, tab: 'overview' };
-const TABS = [['overview', 'Overview'], ['lists', 'Recognition lists'], ['letters', 'Letters issued'], ['design', 'Letter design'], ['share', 'Customer launch kit'], ['team', 'Team']];
+const TABS = [['overview', 'Overview'], ['notify', 'Notify customers'], ['lists', 'Recognition lists'], ['letters', 'Letters issued'], ['design', 'Letter & email wording'], ['team', 'Team']];
 
-function authCard(inner) { return `<div class="pub-wrap" style="max-width:440px"><div class="brandbar"><div class="brand"><span class="mark"></span>I-CAR Recognition Letters <span class="badge">Staff</span></div></div><div class="card stack">${inner}</div></div>`; }
+function authCard(inner) { return `${siteHead('', 'Recognition letters · Staff')}<main class="pub" style="max-width:460px"><div class="panel">${inner}</div></main>`; }
 
 async function renderAdmin() {
   document.documentElement.lang = 'en';
@@ -536,16 +497,12 @@ async function renderAdmin() {
   if (!staff) {
     const { data: need } = await sb.rpc('setup_needed');
     if (need) {
-      const { data: claimed, error } = await sb.rpc('claim_first_admin');
+      const { data: claimed } = await sb.rpc('claim_first_admin');
       if (claimed) ({ data: staff } = await sb.from('staff').select('*').eq('user_id', session.user.id).maybeSingle());
-      else if (!error) {
-        app.innerHTML = authCard(`<h2>Use your @${esc(CONFIG.STAFF_EMAIL_DOMAIN)} email</h2><p class="muted">The first administrator must sign up with an @${esc(CONFIG.STAFF_EMAIL_DOMAIN)} address.</p><button class="btn secondary" id="out">Sign out</button>`);
-        $('#out').onclick = signOut; return;
-      }
     }
   }
   if (!staff || !staff.active) {
-    app.innerHTML = authCard(`<h2>No access</h2><p class="muted">${esc(session.user.email)} isn't set up as a member of the I-CAR letters team${staff && !staff.active ? ' (account deactivated)' : ''}. Ask an administrator to add you.</p><button class="btn secondary" id="out">Sign out</button>`);
+    app.innerHTML = authCard(`<h2>No access</h2><p>${esc(session.user.email)} isn’t set up on the I-CAR letters team${staff && !staff.active ? ' (account deactivated)' : ''}. Ask an administrator to add you.</p><button class="btn secondary" id="out">Sign out</button>`);
     $('#out').onclick = signOut; return;
   }
   ADM.staff = staff;
@@ -556,59 +513,55 @@ async function signOut() { await sb.auth.signOut(); location.hash = '#/admin'; r
 
 async function renderSignIn() {
   const { data: need } = await sb.rpc('setup_needed');
-  if (need) {
-    app.innerHTML = authCard(`
-      <h2>First-time setup</h2>
-      <p class="muted">No administrator exists yet. Create the first administrator account using an @${esc(CONFIG.STAFF_EMAIL_DOMAIN)} email address. You'll add the rest of the team from inside the app.</p>
-      <form id="suForm" class="stack">
-        <div><label class="f" for="su_email">Work email</label><input id="su_email" type="email" autocomplete="username" required></div>
-        <div><label class="f" for="su_pw">Password</label><input id="su_pw" type="password" autocomplete="new-password" minlength="10" required><div class="help">At least 10 characters</div></div>
-        <div id="suMsg"></div><button class="btn block" id="suBtn">Create administrator account</button>
-      </form>
-      <button class="btn ghost" id="toSignIn">I already created it. Sign in</button>`);
-    $('#toSignIn').onclick = () => renderSignInForm();
-    $('#suForm').onsubmit = async e => {
-      e.preventDefault(); const email = $('#su_email').value.trim().toLowerCase(), pw = $('#su_pw').value, msg = $('#suMsg');
-      if (!email.endsWith('@' + CONFIG.STAFF_EMAIL_DOMAIN)) { msg.innerHTML = `<div class="alert err">Use an @${esc(CONFIG.STAFF_EMAIL_DOMAIN)} email address.</div>`; return; }
-      if (pw.length < 10) { msg.innerHTML = `<div class="alert err">Use a password of at least 10 characters.</div>`; return; }
-      busy($('#suBtn'), true, 'Creating…');
-      const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: publicUrl() + '#/admin' } });
-      busy($('#suBtn'), false);
-      if (error) { msg.innerHTML = `<div class="alert err">${esc(error.message)}</div>`; return; }
-      if (data.session) return renderAdmin();
-      msg.innerHTML = `<div class="alert ok">Check ${esc(email)} for a confirmation email. After confirming, come back here and sign in.</div>`;
-    };
-    return;
-  }
-  renderSignInForm();
+  if (!need) return renderSignInForm();
+  app.innerHTML = authCard(`
+    <h2>First-time setup</h2>
+    <p>No administrator exists yet. Create the first administrator account with an @${esc(CONFIG.STAFF_EMAIL_DOMAIN)} email address. You’ll add the rest of the team from inside the app.</p>
+    <form id="suForm">
+      <div><label class="f" for="su_email">Work email</label><input id="su_email" type="email" autocomplete="username" required></div>
+      <div style="margin-top:14px"><label class="f" for="su_pw">Password</label><input id="su_pw" type="password" autocomplete="new-password" minlength="10" required><div class="help">At least 10 characters</div></div>
+      <div id="suMsg" style="margin-top:14px"></div><button class="btn block" id="suBtn" style="margin-top:6px">Create administrator account</button>
+    </form>
+    <button class="btn ghost" id="toSignIn" style="margin-top:10px">I already created it. Sign in</button>`);
+  $('#toSignIn').onclick = renderSignInForm;
+  $('#suForm').onsubmit = async e => {
+    e.preventDefault(); const email = $('#su_email').value.trim().toLowerCase(), pw = $('#su_pw').value, msg = $('#suMsg');
+    if (!email.endsWith('@' + CONFIG.STAFF_EMAIL_DOMAIN)) return msg.innerHTML = `<div class="alert err">Use an @${esc(CONFIG.STAFF_EMAIL_DOMAIN)} email address.</div>`;
+    if (pw.length < 10) return msg.innerHTML = '<div class="alert err">Use a password of at least 10 characters.</div>';
+    busy($('#suBtn'), true, 'Creating…');
+    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: publicUrl() + '#/admin' } });
+    busy($('#suBtn'), false);
+    if (error) return msg.innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
+    if (data.session) return renderAdmin();
+    msg.innerHTML = `<div class="alert ok">Check ${esc(email)} for a confirmation email. After confirming, come back here and sign in.</div>`;
+  };
 }
 function renderSignInForm() {
   app.innerHTML = authCard(`
     <h2>Staff sign in</h2>
-    <form id="siForm" class="stack">
+    <form id="siForm">
       <div><label class="f" for="si_email">Email</label><input id="si_email" type="email" autocomplete="username" required></div>
-      <div><label class="f" for="si_pw">Password</label><input id="si_pw" type="password" autocomplete="current-password" required></div>
-      <div id="siMsg"></div><button class="btn block" id="siBtn">Sign in</button>
+      <div style="margin-top:14px"><label class="f" for="si_pw">Password</label><input id="si_pw" type="password" autocomplete="current-password" required></div>
+      <div id="siMsg" style="margin-top:14px"></div><button class="btn block" id="siBtn" style="margin-top:6px">Sign in</button>
     </form>
-    <p class="help">Forgot your password? Ask an administrator on your team to reset it.</p>`);
+    <p class="help" style="margin:14px 0 0">Forgot your password? Ask an administrator on your team to reset it.</p>`);
   $('#siForm').onsubmit = async e => {
     e.preventDefault(); busy($('#siBtn'), true, 'Signing in…');
     const { error } = await sb.auth.signInWithPassword({ email: $('#si_email').value.trim(), password: $('#si_pw').value });
     busy($('#siBtn'), false);
-    if (error) { $('#siMsg').innerHTML = `<div class="alert err">${esc(error.message === 'Invalid login credentials' ? 'That email and password don’t match.' : error.message)}</div>`; return; }
+    if (error) return $('#siMsg').innerHTML = `<div class="alert err">${esc(error.message === 'Invalid login credentials' ? 'That email and password don’t match.' : error.message)}</div>`;
     renderAdmin();
   };
 }
 function renderChangePassword(forced) {
   const html = `<h2>${forced ? 'Choose a new password' : 'Change password'}</h2>
-    ${forced ? '<p class="muted">You signed in with a temporary password. Choose your own to continue.</p>' : ''}
-    <form id="cpForm" class="stack">
+    ${forced ? '<p>You signed in with a temporary password. Choose your own to continue.</p>' : ''}
+    <form id="cpForm">
       <div><label class="f" for="cp1">New password</label><input id="cp1" type="password" autocomplete="new-password" required><div class="help">At least 10 characters</div></div>
-      <div><label class="f" for="cp2">Confirm new password</label><input id="cp2" type="password" autocomplete="new-password" required></div>
-      <div id="cpMsg"></div><div class="row"><button class="btn" id="cpBtn">Save password</button>${forced ? '' : '<button type="button" class="btn secondary" id="cpCancel">Cancel</button>'}</div>
+      <div style="margin-top:14px"><label class="f" for="cp2">Confirm new password</label><input id="cp2" type="password" autocomplete="new-password" required></div>
+      <div id="cpMsg" style="margin-top:14px"></div><div class="row" style="margin-top:6px"><button class="btn" id="cpBtn">Save password</button>${forced ? '' : '<button type="button" class="btn secondary" id="cpCancel">Cancel</button>'}</div>
     </form>`;
-  if (forced) app.innerHTML = authCard(html); else openModal(html);
-  if (!forced) $('#cpCancel').onclick = closeModal;
+  if (forced) app.innerHTML = authCard(html); else { openModal(html); $('#cpCancel').onclick = closeModal; }
   $('#cpForm').onsubmit = async e => {
     e.preventDefault(); const a = $('#cp1').value, b = $('#cp2').value, m = $('#cpMsg');
     if (a.length < 10) return m.innerHTML = '<div class="alert err">Use at least 10 characters.</div>';
@@ -620,52 +573,197 @@ function renderChangePassword(forced) {
     toast('Password updated'); if (forced) renderAdmin(); else closeModal();
   };
 }
-function openModal(html) { closeModal(); const d = document.createElement('div'); d.className = 'modal-bg'; d.id = 'modal'; d.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`; document.body.appendChild(d); d.addEventListener('click', e => { if (e.target === d) closeModal(); }); setTimeout(() => d.querySelector('input,button')?.focus(), 30); }
-function closeModal() { $('#modal')?.remove(); }
+function openModal(html, wide) { closeModal(); const d = document.createElement('div'); d.className = 'modal-bg'; d.id = 'modal'; d.innerHTML = `<div class="modal${wide ? ' wide' : ''}" role="dialog" aria-modal="true">${html}</div>`; document.body.appendChild(d); d.addEventListener('click', e => { if (e.target === d) closeModal(); }); document.addEventListener('keydown', escClose); setTimeout(() => d.querySelector('input,textarea,button')?.focus(), 30); }
+function escClose(e) { if (e.key === 'Escape') closeModal(); }
+function closeModal() { $('#modal')?.remove(); document.removeEventListener('keydown', escClose); }
 
 function renderAdminShell() {
   const s = ADM.staff, isAdmin = s.role === 'admin';
   const tabs = TABS.filter(([k]) => k !== 'team' || isAdmin);
   if (!tabs.some(([k]) => k === ADM.tab)) ADM.tab = 'overview';
-  app.innerHTML = `
-    <div class="topbar"><div class="in"><div class="brand" style="color:#fff"><span class="mark"></span>I-CAR Recognition Letters</div>
-      <div class="topright"><span class="who">${esc(s.full_name || s.email)}${isAdmin ? ' · Admin' : ''}</span>
-      <button class="btn sm" id="pwBtn">Password</button><button class="btn sm" id="outBtn">Sign out</button></div></div></div>
+  app.innerHTML = `${siteHead(`<div class="whoami"><span class="name">${esc(s.full_name || s.email)}${isAdmin ? ' · Admin' : ''}</span><button class="btn sm secondary" id="pwBtn">Password</button><button class="btn sm secondary" id="outBtn">Sign out</button></div>`, 'Recognition letters · Staff')}
     <nav class="tabs"><div class="in">${tabs.map(([k, l]) => `<button data-tab="${k}" class="${ADM.tab === k ? 'on' : ''}">${l}</button>`).join('')}</div></nav>
     <main class="adm" id="view"></main>`;
   $('#outBtn').onclick = signOut;
   $('#pwBtn').onclick = () => renderChangePassword(false);
   $$('[data-tab]').forEach(b => b.onclick = () => { ADM.tab = b.dataset.tab; renderAdminShell(); });
-  ({ overview: viewOverview, lists: viewLists, letters: viewLetters, design: viewDesign, share: viewShare, team: viewTeam })[ADM.tab]();
+  ({ overview: viewOverview, notify: viewNotify, lists: viewLists, letters: viewLetters, design: viewDesign, team: viewTeam })[ADM.tab]();
 }
 const view = () => $('#view');
-function loading() { view().innerHTML = '<div class="center" style="min-height:200px"><span class="spinner"></span></div>'; }
+function loading() { view().innerHTML = '<div class="center" style="min-height:200px"><span class="spinner" style="color:#006cb4"></span></div>'; }
 function progBadge(p) { return `<span class="badge ${PROGRAM[p]?.badge || ''}">${esc(PROGRAM[p]?.en || p)}</span>`; }
+function goTab(t) { ADM.tab = t; renderAdminShell(); }
 
 /* ---------- Overview ---------- */
 async function viewOverview() {
   loading();
-  const [{ data: st, error }, { data: recent }] = await Promise.all([
-    sb.rpc('get_dashboard_stats'),
-    sb.from('letter_requests').select('*').order('created_at', { ascending: false }).limit(8)
-  ]);
+  const [{ data: st, error }, { data: recent }] = await Promise.all([sb.rpc('get_dashboard_stats'), sb.from('letter_requests').select('*').order('created_at', { ascending: false }).limit(6)]);
   if (error) return view().innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
   const list = p => (st.lists || []).find(l => l.program === p);
-  const listCard = p => { const l = list(p); return `<div class="card"><div class="spread"><h3 style="margin:0">${progBadge(p)} list</h3><button class="btn sm secondary" data-go="lists">Update</button></div>
-    ${l ? `<p style="margin:10px 0 0"><b>${l.row_count.toLocaleString()}</b> ${p === 'gold_class' ? 'businesses' : 'individuals'} can request letters</p><p class="small muted" style="margin:2px 0 0">${esc(l.filename || '')} · uploaded ${esc(fmtDateTime(l.uploaded_at))}${l.uploaded_by || l.uploaded_by_email ? ' by ' + esc(l.uploaded_by || l.uploaded_by_email) : ''}</p>`
-      : `<div class="alert warn" style="margin-top:10px">No list uploaded yet, so nobody can request a ${PROGRAM[p].en} letter.</div>`}</div>`; };
+  const listCard = p => { const l = list(p); return `<div class="panel"><div class="spread"><h3 style="margin:0">${progBadge(p)} list</h3><button class="btn sm secondary" data-go="lists">Update list</button></div>
+    ${l ? `<p style="margin:12px 0 0"><b>${l.row_count.toLocaleString()}</b> ${p === 'gold_class' ? 'businesses' : 'individuals'} can download letters</p><p class="small muted" style="margin:2px 0 0">${esc(l.filename || '')} · uploaded ${esc(fmtDateTime(l.uploaded_at))}${l.uploaded_by || l.uploaded_by_email ? ' by ' + esc(l.uploaded_by || l.uploaded_by_email) : ''}</p>`
+      : `<div class="alert warn" style="margin-top:12px">No list uploaded yet, so nobody can download a ${PROGRAM[p].en} letter.</div>`}</div>`; };
   view().innerHTML = `
     <div class="stats">
-      <div class="stat"><div class="n">${(st.letters_total || 0).toLocaleString()}</div><div class="l">Letters issued (all time)</div></div>
+      <div class="stat alt"><div class="n">${(st.not_contacted || 0).toLocaleString()}</div><div class="l">Not yet contacted</div></div>
+      <div class="stat"><div class="n">${(st.contacted || 0).toLocaleString()}</div><div class="l">Customers contacted</div></div>
+      <div class="stat"><div class="n">${(st.unique_recipients || 0).toLocaleString()}</div><div class="l">Customers with a letter</div></div>
+      <div class="stat"><div class="n">${(st.letters_total || 0).toLocaleString()}</div><div class="l">Letters downloaded (all time)</div></div>
       <div class="stat"><div class="n">${(st.letters_30d || 0).toLocaleString()}</div><div class="l">Letters in the last 30 days</div></div>
-      <div class="stat"><div class="n">${(st.by_program?.gold_class || 0).toLocaleString()} / ${(st.by_program?.platinum || 0).toLocaleString()}</div><div class="l">Gold Class / Platinum letters</div></div>
-      <div class="stat"><div class="n">${(st.unique_recipients || 0).toLocaleString()}</div><div class="l">Businesses and individuals served</div></div>
-      <div class="stat"><div class="n">${(st.new_emails || 0).toLocaleString()}</div><div class="l">Contact emails collected</div></div>
     </div>
+    ${st.not_contacted ? `<div class="alert info spread" style="margin-bottom:var(--space-md)"><span><b>${st.not_contacted.toLocaleString()}</b> recognized customers haven’t been told about their letter yet.</span><button class="btn sm" data-go="notify">Notify customers</button></div>` : ''}
     <div class="grid2">${listCard('gold_class')}${listCard('platinum')}</div>
-    <div class="card"><div class="spread"><h3 style="margin:0">Latest letters</h3><button class="btn sm secondary" data-go="letters">View all</button></div>
-      ${recent?.length ? `<div class="tablewrap" style="margin-top:12px">${lettersTable(recent, false)}</div>` : '<p class="muted" style="margin:10px 0 0">No letters have been requested yet.</p>'}</div>`;
-  $$('[data-go]').forEach(b => b.onclick = () => { ADM.tab = b.dataset.go; renderAdminShell(); });
+    <div class="panel"><div class="spread"><h3 style="margin:0">Latest letters</h3><button class="btn sm secondary" data-go="letters">View all</button></div>
+      ${recent?.length ? `<div class="tablewrap" style="margin-top:14px">${lettersTable(recent, false)}</div>` : '<p class="muted" style="margin:12px 0 0">No letters have been downloaded yet.</p>'}</div>`;
+  $$('[data-go]').forEach(b => b.onclick = () => goTab(b.dataset.go));
+}
+
+/* ---------- Notify customers ---------- */
+const NF = { program: 'gold_class', q: '', status: 'not_contacted', page: 0, size: 50 };
+const CHECK_PHRASE = { gold_class: { en: 'your business postal code', fr: 'du code postal de votre entreprise' }, platinum: { en: 'your last name', fr: 'de votre nom de famille' } };
+const PHONE_SCRIPT = {
+  en: `Hi, this is {{sender}} from I-CAR Canada. I'm calling about {{name}}'s I-CAR {{program}} recognition.
+
+Congratulations! You can now download an official recognition letter, in English or French, whenever you need it.
+
+Can I email you the link? [Confirm the best email address]
+
+To download it, you'll need your I-CAR ID ({{icar_id}}) and {{check}}.
+
+[If they'd rather not get an email] The address is {{short}}. Choose {{program}}, then enter your I-CAR ID.`,
+  fr: `Bonjour, ici {{sender}} d'I-CAR Canada. Je vous appelle au sujet de la reconnaissance {{program}} d'I-CAR de {{name}}.
+
+Félicitations! Vous pouvez maintenant télécharger une lettre de reconnaissance officielle, en français ou en anglais, au moment qui vous convient.
+
+Puis-je vous envoyer le lien par courriel? [Confirmer la meilleure adresse courriel]
+
+Pour la télécharger, vous aurez besoin de votre numéro I-CAR ({{icar_id}}) et {{check}}.
+
+[S'ils préfèrent ne pas recevoir de courriel] L'adresse est {{short}}. Choisissez {{program}}, puis entrez votre numéro I-CAR.`
+};
+function notifyVars(r, lang) {
+  const contact = (r.contact_name || (r.program === 'platinum' ? r.display_name : '') || '').split(/\s+/)[0] || '';
+  return { name: r.display_name, contact, icar_id: r.icar_id, program: PROGRAM[r.program][lang], check: CHECK_PHRASE[r.program][lang],
+    link: personalLink(r.program, r.icar_id, lang), short: publicUrl().replace(/^https?:\/\//, ''), sender: ADM.staff.full_name || '' };
+}
+function fillMsg(t, v) { return fill(t, v).replace(/ +,/g, ',').replace(/^(Hello|Bonjour) ,/m, '$1,'); }
+
+async function viewNotify() {
+  view().innerHTML = `
+    <div class="panel">
+      <div class="spread" style="margin-bottom:16px">
+        <div><h2 style="margin:0">Notify customers</h2><p class="muted" style="margin:4px 0 0">Email or phone each recognized customer with their personal link, then log it here.</p></div>
+        <div class="seg" role="group" aria-label="Recognition"><button data-np="gold_class" class="${NF.program === 'gold_class' ? 'on' : ''}">Gold Class</button><button data-np="platinum" class="${NF.program === 'platinum' ? 'on' : ''}">Platinum</button></div>
+      </div>
+      <div class="filters">
+        <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, I-CAR ID, contact, email or city" value="${esc(NF.q)}"></div>
+        <div><button class="btn secondary" id="nf_x">Export for mail merge</button></div>
+      </div>
+      <div class="chips" id="nfChips"></div>
+      <div id="nfRes" style="margin-top:14px"><div class="center" style="min-height:160px"><span class="spinner" style="color:#006cb4"></span></div></div>
+    </div>`;
+  $$('[data-np]').forEach(b => b.onclick = () => { NF.program = b.dataset.np; NF.page = 0; viewNotify(); });
+  let timer; $('#nf_q').oninput = () => { clearTimeout(timer); timer = setTimeout(() => { NF.q = $('#nf_q').value; NF.page = 0; loadNotify(); }, 300); };
+  $('#nf_x').onclick = exportMailMerge;
+  loadNotify();
+}
+let NROWS = [];
+async function loadNotify() {
+  const { data, error } = await sb.rpc('get_customer_list', { p_program: NF.program, p_q: NF.q, p_status: NF.status, p_limit: NF.size, p_offset: NF.page * NF.size });
+  const res = $('#nfRes'); if (!res) return;
+  if (error) return res.innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
+  const s = data.summary || {};
+  $('#nfChips').innerHTML = [['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no letter yet'], ['downloaded', 'Letter downloaded'], ['all', 'All']]
+    .map(([k, l]) => `<button class="chip ${NF.status === k ? 'on' : ''}" data-ns="${k}">${l}<span class="c">${(s[k === 'all' ? 'total' : k] || 0).toLocaleString()}</span></button>`).join('');
+  $$('[data-ns]').forEach(b => b.onclick = () => { NF.status = b.dataset.ns; NF.page = 0; loadNotify(); });
+  NROWS = data.rows || [];
+  if (!s.total) return res.innerHTML = `<div class="alert warn">No ${PROGRAM[NF.program].en} list has been uploaded yet. <a href="#" id="toLists">Upload one</a> to start notifying customers.</div>`, $('#toLists').onclick = e => { e.preventDefault(); goTab('lists'); };
+  const pages = Math.max(1, Math.ceil((data.total || 0) / NF.size));
+  const status = r => r.letters > 0 ? `<span class="badge ok">Letter downloaded</span><div class="sub">${esc(fmtShort(r.last_letter_at))}</div>`
+    : r.last_contact_at ? `<span class="badge blue">${r.last_contact_method === 'phone' ? 'Phoned' : 'Emailed'}</span><div class="sub">${esc(fmtShort(r.last_contact_at))}${r.last_contact_by ? ' · ' + esc(r.last_contact_by) : ''}${r.contacts > 1 ? ` · ${r.contacts} contacts` : ''}</div>`
+    : '<span class="badge warn">Not contacted</span>';
+  res.innerHTML = NROWS.length ? `<div class="tablewrap"><table><thead><tr><th>${NF.program === 'gold_class' ? 'Business' : 'Individual'}</th><th>I-CAR ID</th><th>Contact on file</th><th>Status</th><th></th></tr></thead><tbody>
+    ${NROWS.map(r => `<tr><td><b>${esc(r.display_name)}</b><div class="sub">${esc(NF.program === 'gold_class' ? [r.city, r.province].filter(Boolean).join(', ') : (r.shop_name || ''))}</div></td>
+      <td class="nowrap">${esc(r.icar_id)}</td>
+      <td>${r.contact_name ? esc(r.contact_name) + '<br>' : ''}${r.contact_email ? `<span class="sub">${esc(r.contact_email)}</span><br>` : ''}${r.contact_phone ? `<span class="sub">${esc(r.contact_phone)}</span>` : ''}${!r.contact_name && !r.contact_email && !r.contact_phone ? '<span class="sub">None</span>' : ''}</td>
+      <td>${status(r)}</td><td class="nowrap"><button class="btn sm" data-notify="${r.id}">Notify</button></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="pager"><span class="muted">${(data.total || 0).toLocaleString()} customers · page ${NF.page + 1} of ${pages}</span>
+      <button class="btn sm secondary" id="npPrev" ${NF.page === 0 ? 'disabled' : ''}>Previous</button><button class="btn sm secondary" id="npNext" ${NF.page + 1 >= pages ? 'disabled' : ''}>Next</button></div>`
+    : '<p class="muted">Nobody matches this filter.</p>';
+  $('#npPrev') && ($('#npPrev').onclick = () => { NF.page--; loadNotify(); });
+  $('#npNext') && ($('#npNext').onclick = () => { NF.page++; loadNotify(); });
+  $$('[data-notify]').forEach(b => b.onclick = () => openNotify(NROWS.find(r => String(r.id) === b.dataset.notify)));
+}
+
+async function openNotify(r, lang = 'en') {
+  const S = (await loadContent()).settings || {};
+  const v = notifyVars(r, lang);
+  const subj = fillMsg(lang === 'fr' ? S.notify_subject_fr : S.notify_subject_en, v);
+  const body = fillMsg(lang === 'fr' ? S.notify_body_fr : S.notify_body_en, v);
+  const script = fillMsg(PHONE_SCRIPT[lang], v);
+  openModal(`
+    <button class="btn ghost x" id="nClose" aria-label="Close">✕</button>
+    <div class="spread" style="align-items:flex-start;margin-bottom:12px">
+      <div><div>${progBadge(r.program)}</div><h2 style="margin:6px 0 0">${esc(r.display_name)}</h2><div class="muted small">I-CAR ID ${esc(r.icar_id)}${r.contact_name ? ' · Contact: ' + esc(r.contact_name) : ''}</div></div>
+      <div class="lang-toggle" role="group" aria-label="Message language"><button data-nl="en" class="${lang === 'en' ? 'on' : ''}">English</button><button data-nl="fr" class="${lang === 'fr' ? 'on' : ''}">Français</button></div>
+    </div>
+    <label class="f" for="nLink">Their personal link</label>
+    <div class="copyrow"><input id="nLink" type="text" readonly value="${esc(v.link)}"><button class="btn secondary" id="nCopyLink">Copy link</button></div>
+    <div class="help">Opens the letter page with ${r.program === 'gold_class' ? 'their I-CAR ID filled in. They confirm with their postal code' : 'their I-CAR ID filled in. They confirm with their last name'}.</div>
+    <div class="grid2" style="margin-top:20px">
+      <div>
+        <h3 class="section-head" style="margin-bottom:8px">Email</h3>
+        <div><label class="f" for="nTo">To</label><input id="nTo" type="email" value="${esc(r.contact_email || '')}" placeholder="name@business.ca"></div>
+        <div style="margin-top:10px"><label class="f" for="nSubj">Subject</label><input id="nSubj" type="text" value="${esc(subj)}"></div>
+        <div style="margin-top:10px"><label class="f" for="nBody">Message</label><textarea id="nBody" style="min-height:240px">${esc(body)}</textarea></div>
+        <div class="row" style="margin-top:10px;gap:8px"><button class="btn" id="nMail" style="flex:0 0 auto">Open in email app</button><button class="btn secondary" id="nCopyMail" style="flex:0 0 auto">Copy message</button></div>
+        <button class="btn secondary block" id="nLogEmail" style="margin-top:10px">✓ Log email sent</button>
+      </div>
+      <div>
+        <h3 class="section-head" style="margin-bottom:8px">Phone</h3>
+        <div><label class="f" for="nPhone">Phone number</label><div class="copyrow"><input id="nPhone" type="tel" value="${esc(r.contact_phone || '')}">${r.contact_phone ? `<a class="btn secondary" href="tel:${esc(r.contact_phone.replace(/[^\d+]/g, ''))}">Call</a>` : ''}</div></div>
+        <div style="margin-top:10px"><label class="f" for="nScript">Call script</label><textarea id="nScript" readonly style="min-height:240px;background:var(--tan-25)">${esc(script)}</textarea></div>
+        <div style="margin-top:10px"><label class="f" for="nNote">Note (optional)</label><input id="nNote" type="text" placeholder="e.g. Left voicemail; sent link to new email"></div>
+        <button class="btn secondary block" id="nLogPhone" style="margin-top:10px">✓ Log phone call</button>
+      </div>
+    </div>
+    <h3 class="section-head" style="margin:24px 0 6px">History</h3><ul class="history" id="nHist"><li class="muted">Loading…</li></ul>`, true);
+  $('#nClose').onclick = closeModal;
+  $$('[data-nl]').forEach(b => b.onclick = () => openNotify(r, b.dataset.nl));
+  $('#nCopyLink').onclick = () => copyText(v.link, 'Link copied');
+  $('#nCopyMail').onclick = () => copyText(`${$('#nSubj').value}\n\n${$('#nBody').value}`, 'Message copied');
+  $('#nMail').onclick = () => { location.href = `mailto:${encodeURIComponent($('#nTo').value.trim())}?subject=${encodeURIComponent($('#nSubj').value)}&body=${encodeURIComponent($('#nBody').value)}`; };
+  const log = async (method, btn) => {
+    busy(btn, true, 'Saving…');
+    const detail = method === 'email' ? $('#nTo').value : $('#nPhone').value;
+    const { error } = await sb.rpc('log_customer_contact', { p_recognition_id: r.id, p_method: method, p_detail: detail, p_note: $('#nNote').value });
+    busy(btn, false);
+    if (error) return toast(error.message, 'err');
+    toast(method === 'email' ? 'Email logged' : 'Call logged'); closeModal(); loadNotify();
+  };
+  $('#nLogEmail').onclick = e => log('email', e.currentTarget);
+  $('#nLogPhone').onclick = e => log('phone', e.currentTarget);
+  const [{ data: contacts }, { data: letters }] = await Promise.all([
+    sb.from('customer_contacts').select('method, contact_detail, note, contacted_at, staff:contacted_by(full_name,email)').eq('program', r.program).eq('icar_id_norm', r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, '')).order('contacted_at', { ascending: false }),
+    sb.from('letter_requests').select('created_at, requester_name, requester_email, language').eq('program', r.program).eq('icar_id_norm', r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, '')).order('created_at', { ascending: false })
+  ]);
+  const items = [...(contacts || []).map(c => ({ at: c.contacted_at, html: `<b>${c.method === 'phone' ? 'Phoned' : 'Emailed'}</b>${c.contact_detail ? ' ' + esc(c.contact_detail) : ''} by ${esc(c.staff?.full_name || c.staff?.email || 'staff')}${c.note ? ` — ${esc(c.note)}` : ''}` })),
+    ...(letters || []).map(l => ({ at: l.created_at, html: `<b>Letter downloaded</b> by ${esc(l.requester_name)} (${esc(l.requester_email)}), ${esc(l.language.toUpperCase())}` }))].sort((a, b) => new Date(b.at) - new Date(a.at));
+  const h = $('#nHist'); if (h) h.innerHTML = items.length ? items.map(i => `<li><span class="muted">${esc(fmtDateTime(i.at))}</span> · ${i.html}</li>`).join('') : '<li class="muted">No contact or letters yet.</li>';
+}
+
+async function exportMailMerge(e) {
+  const btn = e.currentTarget; busy(btn, true, 'Exporting…');
+  try {
+    const all = [];
+    for (let i = 0; i < 40; i++) { const { data, error } = await sb.rpc('get_customer_list', { p_program: NF.program, p_q: NF.q, p_status: NF.status, p_limit: 500, p_offset: i * 500 }); if (error) throw error; all.push(...data.rows); if (data.rows.length < 500) break; }
+    csvDownload(all, [['display_name', 'Name'], ['icar_id', 'I-CAR ID'], ['contact_name', 'Contact name'], ['contact_email', 'Email'], ['contact_phone', 'Phone'], ['city', 'City'], ['province', 'Province'],
+      ['link_en', 'Personal link (EN)', r => personalLink(r.program, r.icar_id, 'en')], ['link_fr', 'Personal link (FR)', r => personalLink(r.program, r.icar_id, 'fr')],
+      ['status', 'Status', r => r.letters > 0 ? 'Letter downloaded' : r.last_contact_at ? 'Contacted' : 'Not contacted']],
+      `icar-${PROGRAM[NF.program].slug.toLowerCase()}-notify-${NF.status}-${new Date().toISOString().slice(0, 10)}.csv`);
+    toast(`Exported ${all.length.toLocaleString()} customers`);
+  } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
 }
 
 /* ---------- Recognition lists ---------- */
@@ -677,7 +775,10 @@ const FIELDS = {
     { k: 'city', label: 'City', rx: /city|town|ville/i },
     { k: 'province', label: 'Province', rx: /prov|state|region/i },
     { k: 'postal_code', label: 'Postal code', req: true, rx: /postal|zip|code postal/i, note: 'Customers confirm with this' },
-    { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i }
+    { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i },
+    { k: 'contact_name', label: 'Contact name', rx: /contact.*name|owner|manager|primary.*contact|^contact$/i, note: 'For notifying them' },
+    { k: 'contact_email', label: 'Contact email', rx: /e-?mail|courriel/i, note: 'For notifying them' },
+    { k: 'contact_phone', label: 'Contact phone', rx: /phone|tel|mobile|cell/i, note: 'For notifying them' }
   ],
   platinum: [
     { k: 'icar_id', label: 'I-CAR ID', req: true, rx: /(i-?car|person|individual|student|member|user).*(id|#|no\b|num)|^id$/i },
@@ -685,30 +786,27 @@ const FIELDS = {
     { k: 'first_name', label: 'First name', rx: /first|given|prénom|prenom/i },
     { k: 'last_name', label: 'Last name', rx: /last|surname|family|nom de famille|^nom$/i, note: 'Customers confirm with this' },
     { k: 'shop_name', label: 'Business / employer', rx: /shop|employer|company|business|location|facility/i },
-    { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i }
+    { k: 'recognition_date', label: 'Recognition date', rx: /date|achiev|since|award|renew|earned/i },
+    { k: 'contact_email', label: 'Email', rx: /e-?mail|courriel/i, note: 'For notifying them' },
+    { k: 'contact_phone', label: 'Phone', rx: /phone|tel|mobile|cell/i, note: 'For notifying them' }
   ]
 };
 let UPLOAD = null;
-
 async function viewLists() {
   loading();
-  const [{ data: st }, { data: hist }] = await Promise.all([
-    sb.rpc('get_dashboard_stats'),
-    sb.from('list_uploads').select('id, program, filename, row_count, uploaded_at, is_active, staff:uploaded_by(full_name,email)').order('uploaded_at', { ascending: false }).limit(20)
-  ]);
+  const [{ data: st }, { data: hist }] = await Promise.all([sb.rpc('get_dashboard_stats'),
+    sb.from('list_uploads').select('id, program, filename, row_count, uploaded_at, is_active, staff:uploaded_by(full_name,email)').order('uploaded_at', { ascending: false }).limit(20)]);
   const cur = p => (st?.lists || []).find(l => l.program === p);
-  const card = p => { const l = cur(p); return `<div class="card stack"><h2>${progBadge(p)} list</h2>
+  const card = p => { const l = cur(p); return `<div class="panel"><h2 style="font-size:24px">${progBadge(p)} list</h2>
     ${l ? `<p style="margin:0"><b>${l.row_count.toLocaleString()}</b> records · ${esc(l.filename || '')}<br><span class="small muted">Uploaded ${esc(fmtDateTime(l.uploaded_at))}</span></p>` : '<div class="alert warn">No list uploaded yet.</div>'}
-    <p class="small muted" style="margin:0">Upload the latest export from the I-CAR system (Excel or CSV). It <b>replaces</b> the current ${PROGRAM[p].en} list. Letters already issued are kept.</p>
-    <label class="btn secondary" style="align-self:flex-start">Choose file…<input type="file" accept=".csv,.xlsx,.xls,.txt" data-prog="${p}" hidden></label></div>`; };
-  view().innerHTML = `<div id="uploadArea"></div>
-    <div class="grid2" id="listCards">${card('gold_class')}${card('platinum')}</div>
-    <div class="card"><h3>Upload history</h3>${hist?.length ? `<div class="tablewrap"><table><thead><tr><th>Uploaded</th><th>List</th><th>File</th><th>Records</th><th>By</th><th>Status</th></tr></thead><tbody>
+    <p class="small muted" style="margin:12px 0">Upload the latest export from the I-CAR system (Excel or CSV). It <b>replaces</b> the current ${PROGRAM[p].en} list. Letters already issued and the contact history are kept. Include email and phone columns if you have them, for notifying customers.</p>
+    <label class="btn secondary">Choose file…<input type="file" accept=".csv,.xlsx,.xls,.txt" data-prog="${p}" hidden></label></div>`; };
+  view().innerHTML = `<div id="uploadArea"></div><div class="grid2">${card('gold_class')}${card('platinum')}</div>
+    <div class="panel"><h3>Upload history</h3>${hist?.length ? `<div class="tablewrap"><table><thead><tr><th>Uploaded</th><th>List</th><th>File</th><th>Records</th><th>By</th><th>Status</th></tr></thead><tbody>
       ${hist.map(h => `<tr><td class="nowrap">${esc(fmtDateTime(h.uploaded_at))}</td><td>${progBadge(h.program)}</td><td>${esc(h.filename)}</td><td>${h.row_count.toLocaleString()}</td><td>${esc(h.staff?.full_name || h.staff?.email || '')}</td><td>${h.is_active ? '<span class="badge ok">Current</span>' : '<span class="badge">Replaced</span>'}</td></tr>`).join('')}
     </tbody></table></div>` : '<p class="muted">No uploads yet.</p>'}</div>`;
   $$('input[type=file][data-prog]').forEach(inp => inp.onchange = () => inp.files[0] && startUpload(inp.dataset.prog, inp.files[0]));
 }
-
 function excelDateToISO(v) {
   if (v === '' || v == null) return '';
   if (v instanceof Date && !isNaN(v)) return new Date(v.getTime() - v.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -718,64 +816,58 @@ function excelDateToISO(v) {
 }
 async function startUpload(program, file) {
   const area = $('#uploadArea');
-  area.innerHTML = `<div class="card"><span class="spinner"></span> Reading ${esc(file.name)}…</div>`;
+  area.innerHTML = `<div class="panel" style="margin-bottom:var(--space-md)"><span class="spinner"></span> Reading ${esc(file.name)}…</div>`;
   try {
     await loadScript(XLSX_SRC);
     const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
     UPLOAD = { program, file: file.name, wb, sheet: wb.SheetNames[0] };
     readSheet(); renderMapping();
-  } catch (e) { area.innerHTML = `<div class="alert err">Couldn’t read that file: ${esc(e.message)}</div>`; }
+  } catch (e) { area.innerHTML = `<div class="alert err" style="margin-bottom:var(--space-md)">Couldn’t read that file: ${esc(e.message)}</div>`; }
 }
 function readSheet() {
-  const ws = UPLOAD.wb.Sheets[UPLOAD.sheet];
-  const rows = XLSX.utils.sheet_to_json(ws, { defval: '', raw: true });
+  const rows = XLSX.utils.sheet_to_json(UPLOAD.wb.Sheets[UPLOAD.sheet], { defval: '', raw: true });
   UPLOAD.rows = rows;
   UPLOAD.cols = rows.length ? Object.keys(rows.reduce((a, r) => Object.assign(a, r), {})) : [];
   const used = new Set(); UPLOAD.map = {};
-  for (const f of FIELDS[UPLOAD.program]) {
-    const hit = UPLOAD.cols.find(c => !used.has(c) && f.rx.test(c.trim()));
-    if (hit) { UPLOAD.map[f.k] = hit; used.add(hit); }
-  }
+  for (const f of FIELDS[UPLOAD.program]) { const hit = UPLOAD.cols.find(c => !used.has(c) && f.rx.test(c.trim())); if (hit) { UPLOAD.map[f.k] = hit; used.add(hit); } }
 }
 function buildRows() {
   const m = UPLOAD.map, P = UPLOAD.program, get = (r, k) => (m[k] ? String(r[m[k]] ?? '').trim() : '');
   return UPLOAD.rows.map(r => {
     const first = get(r, 'first_name'), last = get(r, 'last_name');
     const name = get(r, 'name') || [first, last].filter(Boolean).join(' ');
-    const o = { icar_id: get(r, 'icar_id'), name, recognition_date: m.recognition_date ? excelDateToISO(r[m.recognition_date]) : '' };
-    if (P === 'gold_class') Object.assign(o, { address: get(r, 'address'), city: get(r, 'city'), province: get(r, 'province'), postal_code: get(r, 'postal_code') });
-    else Object.assign(o, { last_name: last, shop_name: get(r, 'shop_name') });
+    const o = { icar_id: get(r, 'icar_id'), name, recognition_date: m.recognition_date ? excelDateToISO(r[m.recognition_date]) : '', contact_email: get(r, 'contact_email'), contact_phone: get(r, 'contact_phone') };
+    if (P === 'gold_class') Object.assign(o, { address: get(r, 'address'), city: get(r, 'city'), province: get(r, 'province'), postal_code: get(r, 'postal_code'), contact_name: get(r, 'contact_name') });
+    else Object.assign(o, { last_name: last, shop_name: get(r, 'shop_name'), contact_name: name });
     return o;
   });
 }
+const plural = (n, one, many) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 function renderMapping() {
   const U = UPLOAD, P = U.program, fields = FIELDS[P];
-  const rows = buildRows();
-  const valid = rows.filter(r => r.icar_id && r.name);
+  const rows = buildRows(), valid = rows.filter(r => r.icar_id && r.name);
   const noCheck = P === 'gold_class' ? valid.filter(r => !r.postal_code).length : valid.filter(r => !r.last_name && !/\s/.test(r.name)).length;
-  const ids = new Map(); valid.forEach(r => { const k = r.icar_id.toUpperCase().replace(/[^A-Z0-9]/g, ''); ids.set(k, (ids.get(k) || 0) + 1); });
-  const dups = [...ids.values()].filter(n => n > 1).length;
+  const noContact = valid.filter(r => !r.contact_email && !r.contact_phone).length;
   const missingReq = !U.map.icar_id || (P === 'gold_class' ? !U.map.name || !U.map.postal_code : !(U.map.name || (U.map.first_name && U.map.last_name)));
   const opt = k => `<option value="">— not in file —</option>` + U.cols.map(c => `<option ${U.map[k] === c ? 'selected' : ''}>${esc(c)}</option>`).join('');
-  $('#uploadArea').innerHTML = `<div class="card stack">
-    <div class="spread"><h2 style="margin:0">Update the ${progBadge(P)} list</h2><button class="btn sm secondary" id="upCancel">Cancel</button></div>
-    <p class="muted" style="margin:0">${esc(U.file)} · ${U.rows.length.toLocaleString()} rows${U.wb.SheetNames.length > 1 ? ` · sheet <select id="upSheet" style="width:auto;min-height:34px;padding:4px 8px">${U.wb.SheetNames.map(s => `<option ${s === U.sheet ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>` : ''}</p>
-    <h3 style="margin-top:8px">1. Match the columns</h3>
-    <p class="small muted" style="margin:0">We matched what we could. Check each one.</p>
+  $('#uploadArea').innerHTML = `<div class="panel" style="margin-bottom:var(--space-md)">
+    <div class="spread"><h2 style="margin:0;font-size:24px">Update the ${progBadge(P)} list</h2><button class="btn sm secondary" id="upCancel">Cancel</button></div>
+    <p class="muted" style="margin:4px 0 16px">${esc(U.file)} · ${plural(U.rows.length, 'row', 'rows')}${U.wb.SheetNames.length > 1 ? ` · sheet <select id="upSheet" style="width:auto;min-height:34px;padding:4px 8px">${U.wb.SheetNames.map(s => `<option ${s === U.sheet ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select>` : ''}</p>
+    <h3 class="section-head"><span class="n">1</span>Match the columns</h3>
     <div class="mapgrid">${fields.map(f => `<label for="map_${f.k}"><b>${f.label}</b>${f.req ? ' <span class="req">*</span>' : ''}${f.note ? `<div class="help" style="margin:0">${f.note}</div>` : ''}</label><select id="map_${f.k}" data-map="${f.k}">${opt(f.k)}</select>`).join('')}</div>
-    <h3 style="margin-top:8px">2. Check the result</h3>
+    <h3 class="section-head" style="margin-top:24px"><span class="n">2</span>Check the result</h3>
     <div class="row" style="gap:8px">
-      <div class="alert ${valid.length ? 'ok' : 'err'}"><b>${valid.length.toLocaleString()}</b> records will be loaded</div>
-      ${rows.length - valid.length ? `<div class="alert warn"><b>${(rows.length - valid.length).toLocaleString()}</b> ${rows.length - valid.length === 1 ? 'row' : 'rows'} skipped (no I-CAR ID or name)</div>` : ''}
-      ${noCheck ? `<div class="alert warn"><b>${noCheck.toLocaleString()}</b> ${noCheck === 1 ? 'has' : 'have'} no ${P === 'gold_class' ? 'postal code' : 'last name'}, so they can’t request a letter</div>` : ''}
-      ${dups ? `<div class="alert info"><b>${dups.toLocaleString()}</b> I-CAR IDs appear more than once</div>` : ''}
+      <div class="alert ${valid.length ? 'ok' : 'err'}"><b>${plural(valid.length, 'record', 'records')}</b> will be loaded</div>
+      ${rows.length - valid.length ? `<div class="alert warn"><b>${plural(rows.length - valid.length, 'row', 'rows')}</b> skipped (no I-CAR ID or name)</div>` : ''}
+      ${noCheck ? `<div class="alert warn"><b>${noCheck.toLocaleString()}</b> ${noCheck === 1 ? 'has' : 'have'} no ${P === 'gold_class' ? 'postal code' : 'last name'}, so they can’t download a letter</div>` : ''}
+      ${noContact ? `<div class="alert info"><b>${noContact.toLocaleString()}</b> ${noContact === 1 ? 'has' : 'have'} no email or phone to notify them with</div>` : ''}
     </div>
-    <div class="tablewrap"><table><thead><tr><th>I-CAR ID</th><th>Name</th>${P === 'gold_class' ? '<th>Address</th><th>Postal code</th>' : '<th>Last name</th><th>Business</th>'}<th>Recognition date</th></tr></thead><tbody>
-      ${valid.slice(0, 6).map(r => `<tr><td>${esc(r.icar_id)}</td><td>${esc(r.name)}</td>${P === 'gold_class' ? `<td>${esc([r.address, r.city, r.province].filter(Boolean).join(', '))}</td><td>${esc(r.postal_code)}</td>` : `<td>${esc(r.last_name || r.name.split(/\s+/).pop())}</td><td>${esc(r.shop_name)}</td>`}<td>${esc(r.recognition_date)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Nothing to preview yet. Match the required columns.</td></tr>'}
+    <div class="tablewrap" style="margin-top:12px"><table><thead><tr><th>I-CAR ID</th><th>Name</th>${P === 'gold_class' ? '<th>Postal code</th>' : '<th>Last name</th>'}<th>Email</th><th>Phone</th></tr></thead><tbody>
+      ${valid.slice(0, 5).map(r => `<tr><td>${esc(r.icar_id)}</td><td>${esc(r.name)}</td><td>${esc(P === 'gold_class' ? r.postal_code : (r.last_name || r.name.split(/\s+/).pop()))}</td><td>${esc(r.contact_email)}</td><td>${esc(r.contact_phone)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Match the required columns to see a preview.</td></tr>'}
     </tbody></table></div>
-    <h3 style="margin-top:8px">3. Replace the list</h3>
-    ${missingReq ? '<div class="alert err">Match the required columns (*) first.</div>' : ''}
-    <div><button class="btn" id="upGo" ${missingReq || !valid.length ? 'disabled' : ''}>Replace the ${PROGRAM[P].en} list with ${valid.length.toLocaleString()} records</button></div>
+    <h3 class="section-head" style="margin-top:24px"><span class="n">3</span>Replace the list</h3>
+    ${missingReq ? '<div class="alert err" style="margin-bottom:10px">Match the required columns (*) first.</div>' : ''}
+    <button class="btn" id="upGo" ${missingReq || !valid.length ? 'disabled' : ''}>Replace the ${PROGRAM[P].en} list with ${plural(valid.length, 'record', 'records')}</button>
   </div>`;
   $('#upCancel').onclick = () => { UPLOAD = null; $('#uploadArea').innerHTML = ''; };
   $('#upSheet') && ($('#upSheet').onchange = e => { U.sheet = e.target.value; readSheet(); renderMapping(); });
@@ -783,7 +875,7 @@ function renderMapping() {
   $('#upGo').onclick = async e => {
     busy(e.currentTarget, true, 'Uploading…');
     const { data, error } = await sb.rpc('replace_recognition_list', { p_program: P, p_filename: U.file, p_rows: valid });
-    if (error) { busy(e.currentTarget, false); toast(error.message, 'err'); return; }
+    if (error) { busy(e.currentTarget, false); return toast(error.message, 'err'); }
     toast(`${PROGRAM[P].en} list updated: ${data.inserted.toLocaleString()} records`);
     UPLOAD = null; viewLists();
   };
@@ -802,24 +894,24 @@ function lettersQuery(sel = '*', opts = {}) {
   return q;
 }
 function lettersTable(rows, actions = true) {
-  return `<table><thead><tr><th>Issued</th><th>Letter for</th><th>I-CAR ID</th><th>Requested by</th><th>Email opt-in</th><th>Lang.</th><th>Code</th>${actions ? '<th></th>' : ''}</tr></thead><tbody>
+  return `<table><thead><tr><th>Downloaded</th><th>Letter for</th><th>I-CAR ID</th><th>Requested by</th><th>Email opt-in</th><th>Lang.</th><th>Reference</th>${actions ? '<th></th>' : ''}</tr></thead><tbody>
     ${rows.map(r => `<tr><td class="nowrap">${esc(fmtDateTime(r.created_at))}</td><td>${progBadge(r.program)}<div>${esc(r.recipient_name)}</div></td><td>${esc(r.icar_id)}</td>
-      <td>${esc(r.requester_name)}<div class="small"><a href="mailto:${esc(r.requester_email)}">${esc(r.requester_email)}</a></div></td>
+      <td>${esc(r.requester_name)}<div class="sub"><a href="mailto:${esc(r.requester_email)}">${esc(r.requester_email)}</a></div></td>
       <td>${r.marketing_consent ? '<span class="badge ok">Yes</span>' : '<span class="badge">No</span>'}</td><td>${esc(r.language.toUpperCase())}</td>
-      <td class="code nowrap">${esc(r.verification_code)}</td>${actions ? `<td><button class="btn sm secondary" data-pdf="${r.id}">PDF</button></td>` : ''}</tr>`).join('')}
+      <td class="mono nowrap">${esc(r.verification_code)}</td>${actions ? `<td><button class="btn sm secondary" data-pdf="${r.id}">PDF</button></td>` : ''}</tr>`).join('')}
   </tbody></table>`;
 }
 async function viewLetters() {
-  view().innerHTML = `<div class="card">
+  view().innerHTML = `<div class="panel">
     <div class="filters">
-      <div class="grow"><label class="f" for="lf_q">Search</label><input id="lf_q" type="search" placeholder="Name, email, I-CAR ID or code" value="${esc(LF.q)}"></div>
+      <div class="grow"><label class="f" for="lf_q">Search</label><input id="lf_q" type="search" placeholder="Name, email, I-CAR ID or reference" value="${esc(LF.q)}"></div>
       <div><label class="f" for="lf_p">Recognition</label><select id="lf_p"><option value="">All</option><option value="gold_class" ${LF.program === 'gold_class' ? 'selected' : ''}>Gold Class</option><option value="platinum" ${LF.program === 'platinum' ? 'selected' : ''}>Platinum</option></select></div>
       <div><label class="f" for="lf_c">Email opt-in</label><select id="lf_c"><option value="">All</option><option value="yes" ${LF.consent === 'yes' ? 'selected' : ''}>Opted in</option><option value="no" ${LF.consent === 'no' ? 'selected' : ''}>Not opted in</option></select></div>
       <div><label class="f" for="lf_f">From</label><input id="lf_f" type="date" value="${esc(LF.from)}"></div>
       <div><label class="f" for="lf_t">To</label><input id="lf_t" type="date" value="${esc(LF.to)}"></div>
       <div><button class="btn secondary" id="lf_x">Export CSV</button></div>
     </div>
-    <div id="lfRes"><div class="center" style="min-height:160px"><span class="spinner"></span></div></div></div>`;
+    <div id="lfRes"><div class="center" style="min-height:160px"><span class="spinner" style="color:#006cb4"></span></div></div></div>`;
   let timer;
   const refilter = () => { LF.q = $('#lf_q').value; LF.program = $('#lf_p').value; LF.consent = $('#lf_c').value; LF.from = $('#lf_f').value; LF.to = $('#lf_t').value; LF.page = 0; loadLetters(); };
   $('#lf_q').oninput = () => { clearTimeout(timer); timer = setTimeout(refilter, 300); };
@@ -850,177 +942,99 @@ async function staffPdf(r, btn) {
     if (r.recognition_id) ({ data: rec } = await sb.from('recognitions').select('*').eq('id', r.recognition_id).maybeSingle());
     const L = { program: r.program, language: r.language, name: r.recipient_name, icar_id: r.icar_id, code: r.verification_code, issued_at: r.created_at,
       shop_name: rec?.shop_name, address: rec?.address, city: rec?.city, province: rec?.province, postal_code: rec?.postal_code, recognition_date: rec?.recognition_date };
-    const doc = await buildLetterPdf(L, await loadContent(true)); doc.save(letterFilename(L));
+    (await buildLetterPdf(L, await loadContent(true))).save(letterFilename(L));
   } catch (e) { toast(e.message, 'err'); } finally { busy(btn, false); }
 }
 async function exportLetters(e) {
   const btn = e.currentTarget; busy(btn, true, 'Exporting…');
   try {
     const all = [];
-    for (let i = 0; i < 100; i++) {
-      const { data, error } = await lettersQuery('*').range(i * 1000, i * 1000 + 999);
-      if (error) throw error; all.push(...data); if (data.length < 1000) break;
-    }
-    const cols = [['created_at', 'Issued'], ['program', 'Recognition'], ['recipient_name', 'Letter for'], ['icar_id', 'I-CAR ID'], ['requester_name', 'Requested by'], ['requester_email', 'Email'], ['marketing_consent', 'Email opt-in'], ['language', 'Language'], ['verification_code', 'Verification code']];
-    const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const csv = '﻿' + [cols.map(c => c[1]).join(','), ...all.map(r => cols.map(([k]) => cell(k === 'program' ? PROGRAM[r[k]]?.en : k === 'marketing_consent' ? (r[k] ? 'Yes' : 'No') : k === 'created_at' ? new Date(r[k]).toISOString() : r[k])).join(','))].join('\r\n');
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = `icar-recognition-letters-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+    for (let i = 0; i < 100; i++) { const { data, error } = await lettersQuery('*').range(i * 1000, i * 1000 + 999); if (error) throw error; all.push(...data); if (data.length < 1000) break; }
+    csvDownload(all, [['created_at', 'Downloaded', r => new Date(r.created_at).toISOString()], ['program', 'Recognition', r => PROGRAM[r.program]?.en], ['recipient_name', 'Letter for'], ['icar_id', 'I-CAR ID'],
+      ['requester_name', 'Requested by'], ['requester_email', 'Email'], ['marketing_consent', 'Email opt-in', r => r.marketing_consent ? 'Yes' : 'No'], ['language', 'Language'], ['verification_code', 'Reference']],
+      `icar-recognition-letters-${new Date().toISOString().slice(0, 10)}.csv`);
     toast(`Exported ${all.length.toLocaleString()} letters`);
   } catch (err) { toast(err.message, 'err'); } finally { busy(btn, false); }
 }
 
-/* ---------- Letter design ---------- */
+/* ---------- Letter & email wording ---------- */
 async function viewDesign() {
   loading();
-  const [{ data: S, error }, { data: tpls }] = await Promise.all([
-    sb.from('letter_settings').select('*').eq('id', 1).single(),
-    sb.from('letter_templates').select('*')
-  ]);
+  const [{ data: S, error }, { data: tpls }] = await Promise.all([sb.from('letter_settings').select('*').eq('id', 1).single(), sb.from('letter_templates').select('*')]);
   if (error) return view().innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
   const D = { S: { ...S }, T: {} }; (tpls || []).forEach(t => D.T[t.program + '_' + t.language] = { ...t });
-  let cur = 'gold_class_en';
+  let cur = 'gold_class_en', mail = 'en';
+  const tabBtn = (attr, k, label, on) => `<button class="btn sm ${on ? '' : 'secondary'}" ${attr}="${k}" style="flex:0 0 auto">${label}</button>`;
   const tplEditor = () => { const t = D.T[cur] || { heading: '', body: '' }; return `
-    <div class="row" style="gap:6px;flex-wrap:wrap">${['gold_class_en', 'gold_class_fr', 'platinum_en', 'platinum_fr'].map(k => { const [p, l] = [k.replace(/_(en|fr)$/, ''), k.slice(-2)]; return `<button class="btn sm ${k === cur ? '' : 'secondary'}" data-tpl="${k}" style="flex:0 0 auto">${PROGRAM[p].en} · ${l.toUpperCase()}</button>`; }).join('')}</div>
-    <div><label class="f" for="t_head">Heading</label><input id="t_head" type="text" value="${esc(t.heading)}"></div>
-    <div><label class="f" for="t_body">Letter text</label><textarea id="t_body">${esc(t.body)}</textarea>
-      <div class="help">Leave a blank line between paragraphs. Insert: ${['name', 'icar_id', 'date', 'recognition_date', 'shop_name'].map(p => `<span class="ph" data-ph="${p}" title="Insert">{{${p}}}</span>`).join(' ')}</div></div>
-    <div class="row"><button class="btn secondary" id="t_prev" style="flex:0 0 auto">Preview this letter</button></div>`; };
-  view().innerHTML = `<div class="grid2" style="align-items:start">
-    <div class="card stack"><h2>Letter text</h2><div id="tplBox" class="stack">${tplEditor()}</div></div>
-    <div class="card stack"><h2>Branding and sign-off</h2>
-      <div><label class="f" for="s_org">Organization name</label><input id="s_org" type="text" value="${esc(S.org_name)}"></div>
-      <div><label class="f">Logo</label><div class="row" style="align-items:center">${S.logo_data ? `<img class="imgprev" id="logoPrev" src="${esc(S.logo_data)}" alt="Logo">` : '<span class="muted small" id="logoPrev">No logo. The organization name is shown instead.</span>'}
-        <label class="btn sm secondary" style="flex:0 0 auto">Upload PNG/JPG<input type="file" accept="image/png,image/jpeg" id="s_logo" hidden></label>${S.logo_data ? '<button class="btn sm ghost" id="logoX" style="flex:0 0 auto">Remove</button>' : ''}</div></div>
-      <div><label class="f">Signature image</label><div class="row" style="align-items:center">${S.signature_data ? `<img class="imgprev" src="${esc(S.signature_data)}" alt="Signature">` : '<span class="muted small">No signature image</span>'}
-        <label class="btn sm secondary" style="flex:0 0 auto">Upload PNG/JPG<input type="file" accept="image/png,image/jpeg" id="s_sig" hidden></label>${S.signature_data ? '<button class="btn sm ghost" id="sigX" style="flex:0 0 auto">Remove</button>' : ''}</div>
-        <div class="help">A transparent PNG of the signature works best.</div></div>
+    <div class="row" style="gap:6px">${['gold_class_en', 'gold_class_fr', 'platinum_en', 'platinum_fr'].map(k => tabBtn('data-tpl', k, `${PROGRAM[k.replace(/_(en|fr)$/, '')].en} · ${k.slice(-2).toUpperCase()}`, k === cur)).join('')}</div>
+    <div style="margin-top:14px"><label class="f" for="t_head">Heading</label><input id="t_head" type="text" value="${esc(t.heading)}"></div>
+    <div style="margin-top:12px"><label class="f" for="t_body">Letter text</label><textarea id="t_body" style="min-height:300px">${esc(t.body)}</textarea>
+      <div class="help">Leave a blank line between paragraphs. Insert: ${['name', 'icar_id', 'date', 'recognition_date', 'shop_name'].map(p => `<span class="ph" data-ph="${p}" data-target="t_body">{{${p}}}</span>`).join(' ')}</div></div>
+    <button class="btn secondary" id="t_prev" style="margin-top:12px">Preview this letter</button>`; };
+  const mailEditor = () => `
+    <div class="row" style="gap:6px">${tabBtn('data-mail', 'en', 'English', mail === 'en')}${tabBtn('data-mail', 'fr', 'French', mail === 'fr')}</div>
+    <div style="margin-top:14px"><label class="f" for="m_subj">Subject</label><input id="m_subj" type="text" value="${esc(D.S['notify_subject_' + mail])}"></div>
+    <div style="margin-top:12px"><label class="f" for="m_body">Message</label><textarea id="m_body" style="min-height:300px">${esc(D.S['notify_body_' + mail])}</textarea>
+      <div class="help">Insert: ${['contact', 'name', 'program', 'link', 'icar_id', 'check', 'sender'].map(p => `<span class="ph" data-ph="${p}" data-target="m_body">{{${p}}}</span>`).join(' ')}<br>{{link}} is the customer’s personal link. {{check}} is their postal code or last name. {{sender}} is the signed-in staff member.</div></div>`;
+  view().innerHTML = `<div class="grid2">
+    <div class="panel"><h2 style="font-size:24px">Letter wording</h2><div id="tplBox">${tplEditor()}</div></div>
+    <div class="panel"><h2 style="font-size:24px">Notification email</h2><p class="small muted" style="margin-top:-4px">What the team sends customers from <b>Notify customers</b>.</p><div id="mailBox">${mailEditor()}</div></div>
+  </div>
+  <div class="panel"><h2 style="font-size:24px">Sign-off and contact</h2>
+    <div class="row">
       <div><label class="f" for="s_name">Signed by</label><input id="s_name" type="text" value="${esc(S.signatory_name)}"></div>
-      <div class="row"><div><label class="f" for="s_ten">Title (English)</label><input id="s_ten" type="text" value="${esc(S.signatory_title_en)}"></div>
-        <div><label class="f" for="s_tfr">Title (French)</label><input id="s_tfr" type="text" value="${esc(S.signatory_title_fr)}"></div></div>
-      <div><label class="f" for="s_foot">Footer line</label><input id="s_foot" type="text" value="${esc(S.footer_text)}"></div>
+      <div><label class="f" for="s_ten">Title (English)</label><input id="s_ten" type="text" value="${esc(S.signatory_title_en)}"></div>
+      <div><label class="f" for="s_tfr">Title (French)</label><input id="s_tfr" type="text" value="${esc(S.signatory_title_fr)}"></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div><label class="f">Signature image</label><div class="row" style="align-items:center;gap:10px">${S.signature_data ? `<img class="imgprev" src="${esc(S.signature_data)}" alt="Signature" style="flex:0 0 auto">` : '<span class="muted small" style="flex:0 0 auto">None yet</span>'}
+        <label class="btn sm secondary" style="flex:0 0 auto">Upload PNG/JPG<input type="file" accept="image/png,image/jpeg" id="s_sig" hidden></label>${S.signature_data ? '<button class="btn sm ghost" id="sigX" style="flex:0 0 auto">Remove</button>' : ''}</div>
+        <div class="help">A transparent PNG works best.</div></div>
+      <div><label class="f" for="s_foot">Letter footer line</label><input id="s_foot" type="text" value="${esc(S.footer_text)}"></div>
       <div><label class="f" for="s_mail">Customer contact email</label><input id="s_mail" type="email" value="${esc(S.support_email)}" placeholder="e.g. info@i-car.ca"><div class="help">Shown on the customer page</div></div>
-      <div><label class="f" for="s_acc">Accent colour</label><input id="s_acc" type="color" value="${esc(S.accent_color || '#C8102E')}" style="width:80px;height:44px;padding:4px"></div>
-    </div></div>
-    <div class="card spread"><span class="muted small">Changes apply to every letter downloaded after you save.</span><button class="btn" id="saveDesign">Save changes</button></div>`;
+    </div>
+    <p class="small muted" style="margin:14px 0 0">The I-CAR Canada logo, the Gold Class® and Platinum™ logos, I-CAR Blue and the letterhead layout come from the I-CAR Canada design system and are built in.</p>
+  </div>
+  <div class="panel spread"><span class="muted small">Changes apply to letters and emails created after you save.</span><button class="btn" id="saveDesign">Save changes</button></div>`;
 
   const grab = () => {
-    if ($('#t_head')) { D.T[cur] = { ...(D.T[cur] || { program: cur.replace(/_(en|fr)$/, ''), language: cur.slice(-2) }), heading: $('#t_head').value, body: $('#t_body').value }; }
-    Object.assign(D.S, { org_name: $('#s_org').value, signatory_name: $('#s_name').value, signatory_title_en: $('#s_ten').value, signatory_title_fr: $('#s_tfr').value, footer_text: $('#s_foot').value, support_email: $('#s_mail').value.trim(), accent_color: $('#s_acc').value });
+    if ($('#t_head')) D.T[cur] = { ...(D.T[cur] || { program: cur.replace(/_(en|fr)$/, ''), language: cur.slice(-2) }), heading: $('#t_head').value, body: $('#t_body').value };
+    if ($('#m_subj')) { D.S['notify_subject_' + mail] = $('#m_subj').value; D.S['notify_body_' + mail] = $('#m_body').value; }
+    Object.assign(D.S, { signatory_name: $('#s_name').value, signatory_title_en: $('#s_ten').value, signatory_title_fr: $('#s_tfr').value, footer_text: $('#s_foot').value, support_email: $('#s_mail').value.trim() });
   };
+  const bindPh = () => $$('[data-ph]').forEach(s => s.onclick = () => { const ta = $('#' + s.dataset.target), ins = `{{${s.dataset.ph}}}`; const p = ta.selectionStart ?? ta.value.length; ta.value = ta.value.slice(0, p) + ins + ta.value.slice(ta.selectionEnd ?? p); ta.focus(); ta.selectionStart = ta.selectionEnd = p + ins.length; });
   const bindTpl = () => {
     $$('[data-tpl]').forEach(b => b.onclick = () => { grab(); cur = b.dataset.tpl; $('#tplBox').innerHTML = tplEditor(); bindTpl(); });
-    $$('[data-ph]').forEach(s => s.onclick = () => { const ta = $('#t_body'), ins = `{{${s.dataset.ph}}}`; const p = ta.selectionStart ?? ta.value.length; ta.value = ta.value.slice(0, p) + ins + ta.value.slice(ta.selectionEnd ?? p); ta.focus(); ta.selectionStart = ta.selectionEnd = p + ins.length; });
     $('#t_prev').onclick = async () => {
       grab(); const [p, l] = [cur.replace(/_(en|fr)$/, ''), cur.slice(-2)];
       const sample = p === 'gold_class'
-        ? { program: p, language: l, name: 'Sample Collision Centre Ltd.', icar_id: 'SAMPLE-0001', address: '123 Main Street', city: 'Toronto', province: 'ON', postal_code: 'M5V 1A1', recognition_date: '2026-03-15', code: 'SAMPL-E0000' }
-        : { program: p, language: l, name: 'Alex Sample', icar_id: 'SAMPLE-0002', shop_name: 'Sample Collision Centre Ltd.', recognition_date: '2026-03-15', code: 'SAMPL-E0000' };
+        ? { program: p, language: l, name: 'Sample Collision Centre Ltd.', icar_id: '100001', address: '123 Main Street', city: 'Toronto', province: 'ON', postal_code: 'M5V 1A1', recognition_date: '2026-03-15', code: 'SAMPLE-0000' }
+        : { program: p, language: l, name: 'Alex Sample', icar_id: '200002', shop_name: 'Sample Collision Centre Ltd.', recognition_date: '2026-03-15', code: 'SAMPLE-0000' };
       const doc = await buildLetterPdf(sample, { settings: D.S, templates: Object.values(D.T) });
       window.open(doc.output('bloburl'), '_blank') || doc.save('preview.pdf');
     };
+    bindPh();
   };
-  bindTpl();
-  const imgInput = (id, key, maxW) => $(id).onchange = async e => {
-    const f = e.target.files[0]; if (!f) return;
-    if (f.size > 5e6) return toast('Use an image under 5 MB', 'err');
-    grab(); D.S[key] = await shrinkImage(f, maxW); await saveDesign(D, true); viewDesign();
-  };
-  imgInput('#s_logo', 'logo_data', 900); imgInput('#s_sig', 'signature_data', 700);
-  $('#logoX') && ($('#logoX').onclick = async () => { grab(); D.S.logo_data = null; await saveDesign(D, true); viewDesign(); });
+  const bindMail = () => { $$('[data-mail]').forEach(b => b.onclick = () => { grab(); mail = b.dataset.mail; $('#mailBox').innerHTML = mailEditor(); bindMail(); }); bindPh(); };
+  bindTpl(); bindMail();
+  $('#s_sig').onchange = async e => { const f = e.target.files[0]; if (!f) return; if (f.size > 5e6) return toast('Use an image under 5 MB', 'err'); grab(); D.S.signature_data = await shrinkImage(f, 700); await saveDesign(D, true); viewDesign(); };
   $('#sigX') && ($('#sigX').onclick = async () => { grab(); D.S.signature_data = null; await saveDesign(D, true); viewDesign(); });
-  $('#saveDesign').onclick = async e => { grab(); busy(e.currentTarget, true, 'Saving…'); await saveDesign(D); busy(e.currentTarget, false); };
+  $('#saveDesign').onclick = async e => { grab(); const b = e.currentTarget; busy(b, true, 'Saving…'); await saveDesign(D); busy(b, false); };
 }
 function shrinkImage(file, maxW) {
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => { const i = new Image(); i.onload = () => { const s = Math.min(1, maxW / i.naturalWidth); const c = document.createElement('canvas'); c.width = Math.round(i.naturalWidth * s); c.height = Math.round(i.naturalHeight * s); c.getContext('2d').drawImage(i, 0, 0, c.width, c.height); res(c.toDataURL(file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png', .92)); }; i.onerror = rej; i.src = r.result; }; r.onerror = rej; r.readAsDataURL(file); });
 }
 async function saveDesign(D, quiet) {
-  const uid = ADM.session.user.id, S = D.S;
-  const { error: e1 } = await sb.from('letter_settings').update({ org_name: S.org_name, signatory_name: S.signatory_name, signatory_title_en: S.signatory_title_en, signatory_title_fr: S.signatory_title_fr, footer_text: S.footer_text, support_email: S.support_email || '', accent_color: S.accent_color, logo_data: S.logo_data, signature_data: S.signature_data, updated_at: new Date().toISOString(), updated_by: uid }).eq('id', 1);
+  const uid = ADM.session.user.id, S = D.S, now = new Date().toISOString();
+  const { error: e1 } = await sb.from('letter_settings').update({ signatory_name: S.signatory_name, signatory_title_en: S.signatory_title_en, signatory_title_fr: S.signatory_title_fr,
+    footer_text: S.footer_text, support_email: S.support_email || '', signature_data: S.signature_data,
+    notify_subject_en: S.notify_subject_en, notify_subject_fr: S.notify_subject_fr, notify_body_en: S.notify_body_en, notify_body_fr: S.notify_body_fr, updated_at: now, updated_by: uid }).eq('id', 1);
   if (e1) return toast(e1.message, 'err');
   for (const t of Object.values(D.T)) {
-    const { error } = await sb.from('letter_templates').update({ heading: t.heading, body: t.body, updated_at: new Date().toISOString(), updated_by: uid }).eq('program', t.program).eq('language', t.language);
+    const { error } = await sb.from('letter_templates').update({ heading: t.heading, body: t.body, updated_at: now, updated_by: uid }).eq('program', t.program).eq('language', t.language);
     if (error) return toast(error.message, 'err');
   }
-  await loadContent(true); toast(quiet ? 'Image saved' : 'Letter design saved');
-}
-
-/* ---------- Customer launch kit ---------- */
-function viewShare() {
-  const url = publicUrl(), S = CONTENT?.settings || {};
-  const goldLink = `${url}?program=gold_class&id=`, platLink = `${url}?program=platinum&id=`;
-  const emailEN = `Subject: Download your I-CAR Gold Class recognition letter any time
-
-Hello,
-
-Congratulations again on achieving I-CAR Gold Class. Many shops have asked for an official letter confirming their recognition for insurers, OEM programs and customers, so we've made it easy.
-
-You can now download your Gold Class recognition letter whenever you need it:
-${goldLink}[I-CAR ID]
-
-You'll need your I-CAR ID and the postal code we have on file for your business. Each letter includes a QR code so anyone you share it with can confirm it's authentic.
-
-Thank you for your commitment to complete, safe and quality repairs.
-
-${S.signatory_name || 'I-CAR Canada'}
-${S.signatory_title_en || ''}`;
-  const emailFR = `Objet : Téléchargez votre lettre de reconnaissance Gold Class d’I-CAR en tout temps
-
-Bonjour,
-
-Félicitations encore pour l’obtention de la reconnaissance Gold Class d’I-CAR. De nombreux ateliers nous ont demandé une lettre officielle confirmant leur reconnaissance pour les assureurs, les programmes des constructeurs et leurs clients. Nous avons donc simplifié les choses.
-
-Vous pouvez maintenant télécharger votre lettre de reconnaissance Gold Class au moment qui vous convient :
-${goldLink}[numéro I-CAR]&lang=fr
-
-Vous aurez besoin de votre numéro I-CAR et du code postal inscrit à votre dossier. Chaque lettre comprend un code QR permettant à quiconque de confirmer son authenticité.
-
-Merci de votre engagement envers des réparations complètes, sécuritaires et de qualité.
-
-${S.signatory_name || 'I-CAR Canada'}
-${S.signatory_title_fr || ''}`;
-  const platEN = `Subject: Your I-CAR Platinum recognition letter is ready when you need it
-
-Hello,
-
-Congratulations on earning I-CAR Platinum. You can now download an official letter confirming your recognition, for your employer, a job application or your records:
-${platLink}[I-CAR ID]
-
-You'll need your I-CAR ID and your last name as it appears on your I-CAR profile.
-
-${S.signatory_name || 'I-CAR Canada'}`;
-  const social = `Gold Class shops and Platinum individuals: you can now download an official I-CAR recognition letter any time, in English or French. Each letter carries a QR code so insurers, OEMs and customers can verify it in seconds. Get yours: ${url}`;
-  const btnHtml = `<a href="${url}?program=gold_class" style="display:inline-block;background:${S.accent_color || '#C8102E'};color:#fff;padding:12px 22px;border-radius:6px;font-weight:600;text-decoration:none">Download your recognition letter</a>`;
-  const box = (id, label, text, rows) => `<div><label class="f" for="${id}">${label}</label><div class="copybox"><textarea id="${id}" readonly style="min-height:${rows || 160}px">${esc(text)}</textarea><button class="btn sm secondary" data-copy="${id}">Copy</button></div></div>`;
-  view().innerHTML = `
-    <div class="card stack"><h2>How customers find out</h2>
-      <p class="muted" style="margin:0">Use these in order. The first three reach existing Gold Class shops and Platinum individuals; the last two keep the link in front of new ones.</p>
-      <ol style="margin:0;padding-left:20px;line-height:1.7">
-        <li><b>Add a button to the i-car.ca Gold Class and Platinum recognition pages</b> linking to the customer page (snippet below).</li>
-        <li><b>Send a one-time announcement email</b> to current Gold Class shops through Insightly, with a personalized link that pre-fills each shop’s I-CAR ID.</li>
-        <li><b>Mention it in the next I-CAR Canada newsletter and on social</b> (copy below), and ask Tanja’s team to send the link whenever someone asks for a letter.</li>
-        <li><b>Include the link in the Gold Class and Platinum achievement notices</b> so newly recognized shops and individuals hear about it right away.</li>
-        <li><b>Add it to I-CAR Canada staff email signatures</b> and the customer service phone script.</li>
-      </ol>
-      <div class="alert info small" style="margin:0">Platinum individuals often have no email on file, so for them the recognition page button, social posts and shop managers are the main routes. The Gold Class email can ask shops to share the Platinum link with their recognized staff.</div>
-    </div>
-    <div class="grid2" style="align-items:start">
-      <div class="card stack"><h3>Links</h3>
-        ${box('l_pub', 'Customer page', url, 44)}
-        ${box('l_gold', 'Gold Class personalized link (add the I-CAR ID merge field at the end)', goldLink, 44)}
-        ${box('l_plat', 'Platinum personalized link', platLink, 44)}
-        ${box('l_ver', 'Letter verification page (for insurers and OEMs)', url + '#/verify', 44)}
-        ${box('l_btn', 'Button for the i-car.ca recognition pages (HTML)', btnHtml, 90)}
-        <p class="help" style="margin:0">In Insightly, replace <span class="ph">[I-CAR ID]</span> with the merge field that holds the shop’s I-CAR ID. Add <span class="ph">&amp;lang=fr</span> for French.</p>
-      </div>
-      <div class="card stack"><h3>Copy you can use</h3>
-        ${box('c_en', 'Gold Class announcement email (English)', emailEN, 260)}
-        ${box('c_fr', 'Gold Class announcement email (French)', emailFR, 260)}
-        ${box('c_pl', 'Platinum announcement email (English)', platEN, 180)}
-        ${box('c_so', 'Social / newsletter blurb', social, 110)}
-      </div>
-    </div>`;
-  $$('[data-copy]').forEach(b => b.onclick = () => copyText($('#' + b.dataset.copy).value));
+  await loadContent(true); toast(quiet ? 'Signature saved' : 'Wording saved');
 }
 
 /* ---------- Team ---------- */
@@ -1029,26 +1043,26 @@ async function viewTeam() {
   const { data: staff, error } = await sb.from('staff').select('*').order('created_at');
   if (error) return view().innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
   const me = ADM.session.user.id;
-  view().innerHTML = `<div class="grid2" style="align-items:start">
-    <div class="card"><h2>Team members</h2><div class="tablewrap"><table><thead><tr><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
-      ${staff.map(s => `<tr><td><b>${esc(s.full_name || '—')}</b><div class="small muted">${esc(s.email)}</div></td>
-        <td>${s.user_id === me ? '<span class="badge">Admin (you)</span>' : `<select data-role="${s.user_id}" style="min-height:34px;padding:4px 8px;width:auto"><option value="staff" ${s.role === 'staff' ? 'selected' : ''}>Staff</option><option value="admin" ${s.role === 'admin' ? 'selected' : ''}>Admin</option></select>`}</td>
+  view().innerHTML = `<div class="grid2">
+    <div class="panel"><h2 style="font-size:24px">Team members</h2><div class="tablewrap"><table><thead><tr><th>Name</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
+      ${staff.map(s => `<tr><td><b>${esc(s.full_name || '—')}</b><div class="sub">${esc(s.email)}</div></td>
+        <td>${s.user_id === me ? '<span class="badge">Admin (you)</span>' : `<select data-role="${s.user_id}" style="min-height:34px;padding:4px 8px;width:auto;font-size:15px"><option value="staff" ${s.role === 'staff' ? 'selected' : ''}>Staff</option><option value="admin" ${s.role === 'admin' ? 'selected' : ''}>Admin</option></select>`}</td>
         <td>${s.active ? '<span class="badge ok">Active</span>' : '<span class="badge off">Deactivated</span>'}</td>
         <td class="nowrap">${s.user_id === me ? '' : `<button class="btn sm secondary" data-reset="${s.user_id}">Reset password</button> <button class="btn sm ${s.active ? 'danger' : 'secondary'}" data-active="${s.user_id}" data-to="${!s.active}">${s.active ? 'Deactivate' : 'Reactivate'}</button>`}</td></tr>`).join('')}
     </tbody></table></div>
-    <p class="help">Staff can upload lists, view and export letters, and edit the letter design. Admins can also manage the team.</p></div>
-    <div class="card stack"><h2>Add a team member</h2>
-      <form id="addForm" class="stack">
-        <div><label class="f" for="a_name">Name</label><input id="a_name" type="text" required></div>
-        <div><label class="f" for="a_email">Email</label><input id="a_email" type="email" required></div>
-        <div><label class="f" for="a_role">Role</label><select id="a_role"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
-        <button class="btn" id="addBtn">Add and create temporary password</button>
+    <p class="help">Staff can notify customers, upload lists, view and export letters, and edit wording. Admins can also manage the team.</p></div>
+    <div class="panel"><h2 style="font-size:24px">Add a team member</h2>
+      <form id="addForm">
+        <div><label class="f" for="a_name">Name</label><input id="a_name" type="text" required><div class="help">Used to sign notification emails</div></div>
+        <div style="margin-top:12px"><label class="f" for="a_email">Email</label><input id="a_email" type="email" required></div>
+        <div style="margin-top:12px"><label class="f" for="a_role">Role</label><select id="a_role"><option value="staff">Staff</option><option value="admin">Admin</option></select></div>
+        <button class="btn" id="addBtn" style="margin-top:14px">Add and create temporary password</button>
       </form>
-      <p class="help" style="margin:0">You’ll see a temporary password to give them. They’ll choose their own the first time they sign in.</p></div></div>`;
+      <p class="help" style="margin:12px 0 0">You’ll see a temporary password to give them. They choose their own the first time they sign in.</p></div></div>`;
   const call = async body => { const { data, error } = await sb.functions.invoke('manage-staff', { body }); if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch {} throw new Error(m); } return data; };
-  const showTemp = (email, pw) => { openModal(`<h2>Temporary password</h2><p>Give this to <b>${esc(email)}</b> along with the sign-in link. It won’t be shown again.</p>
-      <div class="alert info"><div class="small muted">Sign-in link</div><div class="small" style="word-break:break-all">${esc(publicUrl() + '#/admin')}</div><div class="small muted" style="margin-top:8px">Temporary password</div><div class="code bigcode">${esc(pw)}</div></div>
-      <div class="row" style="margin-top:14px"><button class="btn" id="cpyTmp">Copy both</button><button class="btn secondary" id="closeTmp">Done</button></div>`);
+  const showTemp = (email, pw) => { openModal(`<h2>Temporary password</h2><p>Give this to <b>${esc(email)}</b> with the sign-in link. It won’t be shown again.</p>
+      <div class="refbox"><div class="small muted">Sign-in link</div><div class="small" style="word-break:break-all">${esc(publicUrl() + '#/admin')}</div><div class="small muted" style="margin-top:8px">Temporary password</div><div class="mono" style="font-size:22px;font-weight:700">${esc(pw)}</div></div>
+      <div class="row" style="margin-top:16px"><button class="btn" id="cpyTmp">Copy both</button><button class="btn secondary" id="closeTmp">Done</button></div>`);
     $('#cpyTmp').onclick = () => copyText(`Sign in: ${publicUrl()}#/admin\nEmail: ${email}\nTemporary password: ${pw}`); $('#closeTmp').onclick = () => { closeModal(); viewTeam(); }; };
   $('#addForm').onsubmit = async e => {
     e.preventDefault(); busy($('#addBtn'), true, 'Adding…');
@@ -1071,7 +1085,6 @@ async function route() {
     return renderAdmin();
   }
   try { await loadContent(); } catch (e) { console.error(e); }
-  if (h.startsWith('#/verify')) return renderVerify(decodeURIComponent(h.slice('#/verify/'.length) || '').trim());
   renderRequest();
 }
 window.addEventListener('hashchange', route);

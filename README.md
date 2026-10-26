@@ -1,47 +1,72 @@
 # I-CAR Recognition Letters
 
-Self-serve recognition letters for I-CAR Canada. Gold Class businesses and Platinum individuals download an official, bilingual PDF letter with a QR verification code. Tanja's team manages the recognition lists, letter wording, team access and the log of every letter issued.
+Official Gold Class® and Platinum™ recognition letters for I-CAR Canada customers, as a stopgap until the new i-car.ca.
+
+**How it works:** Tanja's team uploads the current Gold Class and Platinum lists. They email or phone each customer with a personal link and log the contact in the app. The customer opens the link, confirms who they are, and downloads a branded PDF letter in English or French. Every contact and every download is tracked.
 
 | Page | Address |
 |---|---|
-| Customer page | `index.html` (pre-fill with `?program=gold_class&id=12345&lang=fr`) |
-| Letter verification | `index.html#/verify` (the QR code on each letter opens `#/verify/CODE`) |
+| Customer page | `index.html`. Personal links pre-fill the I-CAR ID: `?program=gold_class&id=12345` (add `&lang=fr` for French) |
 | Staff back end | `index.html#/admin` |
 
-The whole front end is one file, `index.html`, hosted on GitHub Pages. The back end is the Supabase project **I-CAR Recognition Letters** (`fwtzwkdcxkcnscqkyxhf`, Canada Central).
+The front end is one file, `index.html`, hosted on GitHub Pages, with brand assets in `assets/`. The back end is the Supabase project **I-CAR Recognition Letters** (`fwtzwkdcxkcnscqkyxhf`, Canada Central).
 
-## How it works
+## For customers
 
-**Customers** choose Gold Class or Platinum and enter their I-CAR ID plus one check detail: the business postal code for Gold Class, or their last name for Platinum. They also give their name and email, with an optional email opt-in. On a match, the PDF is generated in their browser and downloaded. Ten failed attempts on one I-CAR ID lock it for an hour.
+1. Open the link the team sent (or the page itself).
+2. Choose Gold Class® or Platinum™. The I-CAR ID is already filled in from a personal link.
+3. Confirm with one detail: the **business postal code** for Gold Class, or the **last name** for Platinum.
+4. Enter your name and email, with an optional opt-in to I-CAR Canada emails, and the PDF downloads.
 
-**Every letter is logged** (who, when, which recognition, the requester's email, opt-in, language) with a unique verification code. Anyone can check a code on the verification page, which also shows whether the recognition is still on the current list.
+Ten failed attempts on one I-CAR ID lock it for an hour. Each letter carries a reference number in its footer, so a customer who calls can be matched to the log.
 
-**Staff** sign in at `#/admin`:
-- **Recognition lists**: upload the latest Excel or CSV export from the I-CAR system. Columns are auto-matched, with a preview before you replace the list.
+## For Tanja's team (`#/admin`)
+
+- **Overview**: who hasn't been contacted yet, who has, and how many letters have been downloaded.
+- **Notify customers**: pick Gold Class or Platinum and filter by *Not contacted*, *Contacted, no letter yet* or *Letter downloaded*. **Notify** opens the customer's personal link, a ready-to-send email (English or French) and a phone script. **Open in email app** starts the email in Outlook. Then **Log email sent** or **Log phone call**, with an optional note, and the full history for that customer is shown. **Export for mail merge** downloads the filtered list with personal links (EN and FR) for a bulk send from Insightly.
+- **Recognition lists**: upload the latest Excel or CSV export from the I-CAR system. Columns are auto-matched, with a preview. Include email and phone columns to make notifying easier. A new upload replaces the list; letters and the contact history are kept.
 - **Letters issued**: search, filter, export to CSV, or re-download any letter.
-- **Letter design**: edit the wording (English and French), logo, signature, signatory and contact email.
-- **Customer launch kit**: links, an i-car.ca button and announcement copy.
-- **Team** (admins only): add people with a temporary password, reset passwords, change roles, deactivate accounts.
+- **Letter & email wording**: edit the letter text and the notification email (English and French), the signatory, the signature image and the customer contact email.
+- **Team** (admins only): add people (with a temporary password), reset passwords, change roles, deactivate accounts. A person's name signs the notification emails they send.
+
+## Branding
+
+Built to the **I-CAR Canada design system**:
+- I-CAR Blue (`#006cb4`) with navy hover and focus;
+- Source Sans 3 for web type;
+- the blue gradient headline box;
+- the official I-CAR Canada logo, always on white;
+- the language-matched Gold Class® and Platinum™ logos;
+- I-CAR® / Gold Class® / Platinum™ marks as specified.
+
+The PDF follows the letterhead rules: logo top left at 1.28in wide, the program logo top right, 1pt I-CAR Blue rules, 1in side margins and a 1.5in bottom margin. The logos and fonts in `assets/` come from the design system. Never recolour or redraw them.
 
 ## Repository layout
 
 ```
-index.html                         the app (customer page, verification, staff back end)
-supabase/schema.sql                complete database setup (tables, security rules, functions)
-supabase/seed.sql                  default letter wording
-supabase/functions/manage-staff/   team-management function (create users, reset passwords, deactivate)
-samples/                           sample Gold Class and Platinum lists for practice uploads
+index.html                                customer page and staff back end
+assets/                                   I-CAR Canada, Gold Class and Platinum logos (EN/FR); Source Sans 3 fonts
+supabase/migrations/001_schema.sql        tables, security rules, letter functions
+supabase/seed.sql                         default letter wording and sign-off
+supabase/migrations/002_customer_notifications.sql   outreach tracking, notification email wording, brand wording fixes
+supabase/functions/manage-staff/          team management (create users, reset passwords, deactivate)
+samples/                                  sample Gold Class and Platinum lists for practice uploads
 ```
 
-## First-time setup
+## Setup
 
-1. **GitHub Pages**: Settings → Pages → Deploy from branch → `main` / root. Use a permanent address (ideally a custom domain such as `letters.i-car.ca`). The address is printed in every QR code, so it shouldn't change after launch. If you use a custom domain, set `PUBLIC_URL` in the `CONFIG` block at the top of `index.html`.
-2. **Supabase Auth → URL Configuration**: set the Site URL to the Pages address.
-3. **First admin**: open `…/index.html#/admin` and create the first account with an @aiacanada.com email. Confirm the email, then sign in.
-4. **Lock down sign-ups**: Supabase → Authentication → Sign In / Providers → turn off *Allow new users to sign up*. All further accounts are created from the Team tab. Also turn on *Leaked password protection*.
-5. **Letter design**: upload the I-CAR logo and Scott's signature, add the customer contact email, and get the wording approved.
-6. **Upload the lists**: Gold Class and Platinum exports from the I-CAR system.
+1. **GitHub Pages**: Settings → Pages → Deploy from a branch → `main` / root. Before sending links to customers, settle on a permanent address (ideally a custom domain such as `letters.i-car.ca`), because those links will stop working if the address changes. If you use a custom domain, set `PUBLIC_URL` in the `CONFIG` block at the top of `index.html`.
+2. **Supabase → Authentication → URL Configuration**: set the Site URL to the Pages address.
+3. **First admin**: open `…/#/admin` and create the first account with an @aiacanada.com email (done for Brian).
+4. **Lock down sign-ups**: Authentication → Sign In / Providers → turn off *Allow new users to sign up*; add everyone else from the Team tab. Turn on *Leaked password protection*.
+5. **Wording**: upload Scott's signature, add the customer contact email, and get the letter wording approved.
+6. **Upload the lists**, then start notifying customers.
 
 ## Rebuilding the back end
 
-In a new Supabase project, run `supabase/schema.sql` then `supabase/seed.sql` in the SQL editor. Deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`. Then update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
+In an empty Supabase project, run these in order in the SQL editor:
+1. `migrations/001_schema.sql`
+2. `seed.sql`
+3. `migrations/002_customer_notifications.sql`
+
+Then deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
