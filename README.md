@@ -82,7 +82,7 @@ samples/SAMPLE-Active-Gold-Stores.xlsx    made-up stores in the system export fo
 
 1. Create a Resend account (resend.com) and add the sending domain `aiacanada.com` (or a subdomain such as `mail.aiacanada.com`). Add the DNS records Resend shows (SPF/DKIM) and wait for it to show *Verified*.
 2. Create an API key in Resend.
-3. In Supabase → Edge Functions → Secrets, add `RESEND_API_KEY` (the key), `MAIL_FROM` (e.g. `I-CAR Canada <collisiontraining@aiacanada.com>`) and optionally `MAIL_REPLY_TO`.
+3. In Supabase → Edge Functions → Secrets, add `RESEND_API_KEY` (the key), `MAIL_FROM` with an address on the verified sending domain (e.g. `I-CAR Canada <collisiontraining@mail.aiacanada.com>`) and optionally `MAIL_REPLY_TO` (replies otherwise go to the customer contact email in Letter & email wording).
 4. In the app, open **Email these stores** and click **Send me a test**.
 
 Store emails come from the monthly export's email column; the upload fills them in automatically.

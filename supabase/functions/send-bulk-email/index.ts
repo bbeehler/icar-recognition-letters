@@ -5,7 +5,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // Picks the stores that match the Notify filters (same database function the staff screen uses),
 // sends each one a personal email through Resend, and logs it in the store's contact history.
 // Deployed with verify_jwt = false; the caller's session token is checked below (any active staff member).
-// Secrets: RESEND_API_KEY, MAIL_FROM (e.g. "I-CAR Canada <collisiontraining@aiacanada.com>"), optional MAIL_REPLY_TO.
+// Secrets: RESEND_API_KEY, MAIL_FROM (an address on the domain verified in Resend, e.g. "I-CAR Canada <collisiontraining@mail.aiacanada.com>"),
+// optional MAIL_REPLY_TO (defaults to the customer contact email in letter_settings).
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -91,7 +92,10 @@ Deno.serve(async (req) => {
   };
   if (mode === "preview") return json({ ok: true, ...summary });
 
-  const key = Deno.env.get("RESEND_API_KEY"), from = Deno.env.get("MAIL_FROM"), replyTo = Deno.env.get("MAIL_REPLY_TO") || undefined;
+  const key = Deno.env.get("RESEND_API_KEY"), from = Deno.env.get("MAIL_FROM");
+  // Replies go to MAIL_REPLY_TO, or else the customer contact email set in Letter & email wording (e.g. collisiontraining@aiacanada.com)
+  const { data: settings } = await admin.from("letter_settings").select("support_email").eq("id", 1).maybeSingle();
+  const replyTo = Deno.env.get("MAIL_REPLY_TO") || (EMAIL_RX.test(settings?.support_email || "") ? settings!.support_email : undefined);
   if (!key || !from) return json({ error: "Email sending isn't set up yet. Add the RESEND_API_KEY and MAIL_FROM secrets in Supabase." }, 503);
   for (const l of ["en", "fr"] as const) {
     const needed = mode === "test" ? recipients.some((r) => langOf(r) === l) || langMode === l : recipients.some((r) => langOf(r) === l);
