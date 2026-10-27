@@ -740,7 +740,7 @@ function openCustomerForm(rec = null) {
         <label class="check" style="margin-bottom:8px"><input type="checkbox" id="cf_alu" ${r.aluminum ? 'checked' : ''}><span><b>Gold Class – Aluminum</b> (gets the Aluminum certificate and letter)</span></label></div>
       <h3 class="section-head" style="margin:20px 0 8px">Contact</h3>
       <div class="row"><div><label class="f" for="cf_cname">Contact name</label><input id="cf_cname" type="text" value="${esc(r.contact_name)}"></div>
-        <div><label class="f" for="cf_email">Email</label><input id="cf_email" type="email" value="${esc(r.contact_email)}"></div>
+        <div><label class="f" for="cf_email">Email</label><input id="cf_email" type="email" value="${esc(r.contact_email)}"><div class="help">Kept when the monthly list is uploaded${r.list_email && r.list_email !== r.contact_email ? ` (the I-CAR export has ${esc(r.list_email)})` : ''}.</div></div>
         <div style="flex:0 1 180px"><label class="f" for="cf_phone">Phone</label><input id="cf_phone" type="tel" value="${esc(r.contact_phone)}"></div></div>
       <div id="cfMsg" style="margin-top:14px"></div>
       <div class="row" style="margin-top:6px;gap:10px">
@@ -903,7 +903,7 @@ async function viewNotify() {
   loadNotify();
 }
 let NROWS = [];
-const NF_CHIPS = [['new', 'New or renewed'], ['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no certificate yet'], ['downloaded', 'Certificate issued'], ['expired', 'Expired'], ['off', 'Off the list'], ['all', 'All on the list']];
+const NF_CHIPS = [['new', 'New or renewed'], ['not_contacted', 'Not contacted'], ['contacted', 'Contacted, no certificate yet'], ['downloaded', 'Certificate issued'], ['expired', 'Expired'], ['no_email', 'No email on file'], ['off', 'Off the list'], ['all', 'All on the list']];
 async function loadNotify() {
   const { data, error } = await sb.rpc('get_customer_list', { p_program: 'gold_class', p_q: NF.q, p_status: NF.status, p_limit: NF.size, p_offset: NF.page * NF.size, p_expires: NF.exp || null });
   const res = $('#nfRes'); if (!res) return;
@@ -911,7 +911,7 @@ async function loadNotify() {
   const s = data.summary || {};
   const sel = $('#nf_exp');
   if (sel) sel.innerHTML = '<option value="">Any month</option>' + (data.months || []).map(x => `<option value="${x.m}" ${NF.exp === x.m ? 'selected' : ''}>${esc(parseDate(x.m + '-15').toLocaleDateString('en-CA', { month: 'long', year: 'numeric' }))} (${x.n})</option>`).join('');
-  $('#nfChips').innerHTML = NF_CHIPS.filter(([k]) => k === NF.status || k === 'all' || !['new', 'expired', 'off'].includes(k) || s[k])
+  $('#nfChips').innerHTML = NF_CHIPS.filter(([k]) => k === NF.status || k === 'all' || !['new', 'expired', 'off', 'no_email'].includes(k) || s[k])
     .map(([k, l]) => `<button class="chip ${NF.status === k ? 'on' : ''}" data-ns="${k}">${l}<span class="c">${(s[k === 'all' ? 'total' : k] || 0).toLocaleString()}</span></button>`).join('');
   $$('[data-ns]').forEach(b => b.onclick = () => { NF.status = b.dataset.ns; NF.page = 0; loadNotify(); });
   NROWS = data.rows || [];
@@ -957,7 +957,8 @@ async function openNotify(r, lang = 'en', opts = {}) {
     <div class="grid2" style="margin-top:20px">
       <div>
         <h3 class="section-head" style="margin-bottom:8px">Email</h3>
-        <div><label class="f" for="nTo">To</label><input id="nTo" type="email" value="${esc(r.contact_email || '')}" placeholder="name@business.ca"></div>
+        <div><label class="f" for="nTo">To</label><div class="copyrow"><input id="nTo" type="email" value="${esc(r.contact_email || '')}" placeholder="name@business.ca"><button class="btn secondary" id="nSaveEmail" title="Save this address on the store. It's kept when the monthly list is uploaded." ${r.contact_email ? 'hidden' : ''}>Save to store</button></div>
+          <div class="help" id="nEmailHelp">${r.contact_email ? (r.email_by_team ? 'Added by the team. Kept when the monthly list is uploaded.' : 'From the I-CAR export.') : 'No email on file. Type one and click <b>Save to store</b> so bulk emails reach them too.'}</div></div>
         <div style="margin-top:10px"><label class="f" for="nSubj">Subject</label><input id="nSubj" type="text" value="${esc(subj)}"></div>
         <div style="margin-top:10px"><label class="f" for="nBody">Message</label><textarea id="nBody" style="min-height:240px">${esc(body)}</textarea></div>
         <div class="row" style="margin-top:10px;gap:8px"><button class="btn" id="nMail" style="flex:0 0 auto">Open in email app</button><button class="btn secondary" id="nCopyMail" style="flex:0 0 auto">Copy message</button></div>
@@ -1037,6 +1038,17 @@ async function openNotify(r, lang = 'en', opts = {}) {
     toast(`${b.dataset.pq === 'plaque' ? 'Plaque' : 'Year plate'} added to the next St. Joseph order`);
     openNotify({ ...r, pending_order: b.dataset.pq }, lang); if (ADM.tab === 'notify') loadNotify();
   });
+  $('#nTo').oninput = () => { $('#nSaveEmail').hidden = $('#nTo').value.trim().toLowerCase() === String(r.contact_email || '').toLowerCase(); };
+  $('#nSaveEmail').onclick = async e => {
+    const b = e.currentTarget, val = $('#nTo').value.trim();
+    busy(b, true);
+    const { data, error } = await sb.rpc('set_store_email', { p_id: r.id, p_email: val });
+    busy(b, false);
+    if (error) return toast(error.message, 'err');
+    r.contact_email = data.email; r.email_by_team = !!data.email; b.hidden = true;
+    $('#nEmailHelp').innerHTML = data.email ? 'Saved. Added by the team, so it’s kept when the monthly list is uploaded.' : 'Email removed from the store.';
+    toast(data.email ? 'Email saved to the store' : 'Email removed'); if (ADM.tab === 'notify') loadNotify();
+  };
   $('#nCopyLink').onclick = () => copyText(v.link, 'Link copied');
   $('#nCopyMail').onclick = () => copyText(`${$('#nSubj').value}\n\n${$('#nBody').value}`, 'Message copied');
   $('#nMail').onclick = () => { location.href = `mailto:${encodeURIComponent($('#nTo').value.trim())}?subject=${encodeURIComponent($('#nSubj').value)}&body=${encodeURIComponent($('#nBody').value)}`; };
@@ -1219,7 +1231,7 @@ function buildRows() {
   return UPLOAD.rows.map(r => {
     const raw = get(r, 'name'), status = get(r, 'status');
     return { icar_id: get(r, 'icar_id').replace(/\.0+$/, ''), name: cleanStoreName(raw), raw_name: raw, address: get(r, 'address'), city: get(r, 'city'), province: get(r, 'province'),
-      postal_code: get(r, 'postal_code').toUpperCase(), expires_on: m.expires_on ? excelDateToISO(r[m.expires_on]) : '', aluminum: /alumin/i.test(status) ? 'yes' : '',
+      postal_code: get(r, 'postal_code').toUpperCase(), expires_on: m.expires_on ? excelDateToISO(r[m.expires_on]) : '', aluminum: m.status ? (/alumin/i.test(status) ? 'yes' : '') : null,
       contact_name: get(r, 'contact_name'), contact_email: get(r, 'contact_email'), contact_phone: get(r, 'contact_phone') };
   });
 }
@@ -1253,6 +1265,8 @@ function renderMapping() {
       ${noPostal ? `<div class="alert warn"><b>${noPostal.toLocaleString()}</b> ${noPostal === 1 ? 'has' : 'have'} no postal code, so they can’t download</div>` : ''}
       ${expired.length ? `<div class="alert warn"><b>${expired.length.toLocaleString()}</b> already expired, so they can’t download until they renew</div>` : ''}
       ${noContact ? `<div class="alert info"><b>${noContact.toLocaleString()}</b> ${noContact === 1 ? 'has' : 'have'} no email or phone</div>` : ''}
+      ${U.map.contact_email ? `<div class="alert info"><b>${valid.filter(r => r.contact_email).length.toLocaleString()}</b> with an email address. Emails the team added are kept.</div>` : ''}
+      ${U.map.status ? '' : '<div class="alert warn">No Gold Class level column found, so each store keeps its current level (Gold Class or Aluminum).</div>'}
     </div>
     ${cleaned.length ? `<details style="margin-top:12px"><summary><b>${plural(cleaned.length, 'shop name', 'shop names')}</b> tidied for the certificate (brackets removed; (CarrXpert) kept)</summary>
       <div class="tablewrap" style="margin-top:8px;max-height:280px;overflow:auto"><table><thead><tr><th>Store #</th><th>In the I-CAR system</th><th>On the certificate</th></tr></thead><tbody>
