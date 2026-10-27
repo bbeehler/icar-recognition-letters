@@ -796,6 +796,89 @@ function notifyVars(r, lang) {
 }
 function fillMsg(t, v) { return fill(t, v).replace(/ +,/g, ',').replace(/^(Hello|Bonjour) ,/m, '$1,'); }
 
+/* ---------- Bulk email to every store matching the Notify filters ---------- */
+const STATUS_LABEL = { new: 'New or renewed', not_contacted: 'Not contacted', contacted: 'Contacted, no certificate yet', downloaded: 'Certificate issued', expired: 'Expired', off: 'Off the list', all: 'All on the list' };
+async function callBulk(payload) {
+  const { data, error } = await sb.functions.invoke('send-bulk-email', { body: { public_url: publicUrl(), ...payload } });
+  if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch {} throw new Error(m); }
+  return data;
+}
+async function openBulkEmail() {
+  const S = (await loadContent()).settings || {};
+  const B = { level: 'all', lang: 'auto', skip_days: 14, tab: 'en',
+    en: { subject: S.notify_subject_en || '', body: S.notify_body_en || '' }, fr: { subject: S.notify_subject_fr || '', body: S.notify_body_fr || '' } };
+  const filters = () => ({ status: NF.status, q: NF.q, exp: NF.exp || null, level: B.level, skip_days: B.skip_days });
+  const expLabel = NF.exp ? parseDate(NF.exp + '-15').toLocaleDateString('en-CA', { month: 'long', year: 'numeric' }) : '';
+  openModal(`
+    <button class="btn ghost x" id="bkClose" aria-label="Close">✕</button>
+    <h2 style="margin:0 0 4px">Email these stores</h2>
+    <p class="small muted" style="margin:0 0 14px">Uses the filters on the Notify screen: <b>${esc(STATUS_LABEL[NF.status] || NF.status)}</b>${NF.exp ? ` · expiring <b>${esc(expLabel)}</b>` : ''}${NF.q ? ` · search “<b>${esc(NF.q)}</b>”` : ''}. Each store gets its own email with its personal link, and the email is logged in its history. Stores that are expired or off the list are never emailed.</p>
+    <div class="row" style="gap:12px;align-items:flex-end">
+      <div style="flex:0 1 200px"><label class="f" for="bkLevel">Level</label><select id="bkLevel"><option value="all">Gold Class and Aluminum</option><option value="gold">Gold Class only</option><option value="aluminum">Aluminum only</option></select></div>
+      <div style="flex:0 1 260px"><label class="f" for="bkLang">Language</label><select id="bkLang"><option value="auto">French for Quebec, English elsewhere</option><option value="en">Everyone in English</option><option value="fr">Everyone in French</option></select></div>
+      <div style="flex:0 1 240px"><label class="f" for="bkSkip">Skip stores emailed in the last</label><select id="bkSkip"><option value="0">— don't skip —</option><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option></select></div>
+    </div>
+    <div id="bkCount" class="refbox" style="margin-top:14px"><span class="spinner" style="color:#006cb4"></span> Counting…</div>
+    <div class="row" style="gap:6px;margin-top:16px"><button class="btn sm" data-bt="en" style="flex:0 0 auto">English message</button><button class="btn sm secondary" data-bt="fr" style="flex:0 0 auto">French message</button></div>
+    <div id="bkEditor"></div>
+    <div class="help">Insert: ${['contact', 'name', 'program', 'link', 'icar_id', 'sender'].map(p => `<span class="ph" data-bph="${p}">{{${p}}}</span>`).join(' ')} · {{link}} is each store’s personal link. Starts from the notification email in <b>Letter &amp; email wording</b>; changes here apply to this send only.</div>
+    <div id="bkMsg" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:8px;gap:10px">
+      <button class="btn secondary" id="bkTest" style="flex:0 0 auto">Send me a test</button>
+      <button class="btn" id="bkSend" style="flex:0 0 auto" disabled>Send</button>
+      <button class="btn ghost" id="bkCancel" style="flex:0 0 auto">Cancel</button>
+    </div>
+    <h3 class="section-head" style="margin:22px 0 6px">Recent bulk emails</h3><ul class="history" id="bkHist"><li class="muted">Loading…</li></ul>`, true);
+  $('#bkClose').onclick = $('#bkCancel').onclick = closeModal;
+  const editor = () => { $('#bkEditor').innerHTML = `
+      <div style="margin-top:10px"><label class="f" for="bkSubj">Subject (${B.tab === 'fr' ? 'French' : 'English'})</label><input id="bkSubj" type="text" value="${esc(B[B.tab].subject)}"></div>
+      <div style="margin-top:10px"><label class="f" for="bkBody">Message (${B.tab === 'fr' ? 'French' : 'English'})</label><textarea id="bkBody" style="min-height:240px">${esc(B[B.tab].body)}</textarea></div>`;
+    $('#bkSubj').oninput = e => { B[B.tab].subject = e.target.value; }; $('#bkBody').oninput = e => { B[B.tab].body = e.target.value; };
+    $$('[data-bt]').forEach(b => b.className = 'btn sm' + (b.dataset.bt === B.tab ? '' : ' secondary')); };
+  editor();
+  $$('[data-bt]').forEach(b => b.onclick = () => { B.tab = b.dataset.bt; editor(); });
+  $$('[data-bph]').forEach(s => s.onclick = () => { const ta = $('#bkBody'), ins = `{{${s.dataset.bph}}}`, p = ta.selectionStart ?? ta.value.length; ta.value = ta.value.slice(0, p) + ins + ta.value.slice(ta.selectionEnd ?? p); B[B.tab].body = ta.value; ta.focus(); });
+  let preview = null;
+  const count = async () => {
+    $('#bkCount').innerHTML = '<span class="spinner" style="color:#006cb4"></span> Counting…'; $('#bkSend').disabled = true;
+    try {
+      preview = await callBulk({ mode: 'preview', filters: filters(), lang: B.lang });
+      const p = preview;
+      $('#bkCount').innerHTML = `<div style="font-size:20px;font-weight:700">${plural(p.recipients, 'store', 'stores')} will be emailed</div>
+        <div class="small muted">${p.english} in English · ${p.french} in French${p.without_email ? ` · <b>${p.without_email}</b> matching ${p.without_email === 1 ? 'store has' : 'stores have'} no email on file` : ''}${p.skipped_recent ? ` · ${p.skipped_recent} skipped (emailed recently)` : ''}${p.excluded_expired_or_off ? ` · ${p.excluded_expired_or_off} expired or off the list left out` : ''}</div>
+        ${p.sample?.length ? `<div class="small" style="margin-top:6px">${p.sample.map(x => `${esc(x.name)} &lt;${esc(x.email)}&gt; ${x.lang.toUpperCase()}`).join(' · ')}${p.recipients > p.sample.length ? ' …' : ''}</div>` : ''}
+        ${p.configured ? '' : '<div class="alert warn small" style="margin-top:8px">Sending isn’t switched on yet: the email service account still needs to be connected. You can preview, but Send and Test won’t work until then.</div>'}`;
+      $('#bkSend').disabled = !p.recipients || !p.configured; $('#bkTest').disabled = !p.configured;
+      $('#bkSend').textContent = p.recipients ? `Send to ${plural(p.recipients, 'store', 'stores')}` : 'Send'; delete $('#bkSend').dataset.confirm;
+    } catch (e) { $('#bkCount').innerHTML = `<div class="alert err">${esc(e.message)}</div>`; }
+  };
+  $('#bkLevel').onchange = e => { B.level = e.target.value; count(); };
+  $('#bkLang').onchange = e => { B.lang = e.target.value; count(); };
+  $('#bkSkip').onchange = e => { B.skip_days = +e.target.value; count(); };
+  const payload = mode => ({ mode, filters: filters(), lang: B.lang, subject_en: B.en.subject, body_en: B.en.body, subject_fr: B.fr.subject, body_fr: B.fr.body });
+  $('#bkTest').onclick = async e => {
+    const b = e.currentTarget; busy(b, true, 'Sending…');
+    try { const r = await callBulk(payload('test')); $('#bkMsg').innerHTML = `<div class="alert ok">Test sent to <b>${esc(r.sent_to)}</b> (${r.messages === 2 ? 'English and French' : '1 message'}), using a real store from the list. Check it, then send.</div>`; loadHist(); }
+    catch (err) { $('#bkMsg').innerHTML = `<div class="alert err">${esc(err.message)}</div>`; } finally { busy(b, false); }
+  };
+  $('#bkSend').onclick = async e => {
+    const b = e.currentTarget;
+    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = `Click again to email ${plural(preview.recipients, 'store', 'stores')} now`; return; }
+    busy(b, true, 'Sending…');
+    try {
+      const r = await callBulk(payload('send'));
+      $('#bkMsg').innerHTML = `<div class="alert ${r.failed ? 'warn' : 'ok'}"><b>${plural(r.sent, 'email', 'emails')} sent</b> and logged in each store’s history.${r.failed ? ` ${r.failed} failed: ${esc((r.errors || []).join('; '))}` : ''}${r.without_email ? ` ${r.without_email} matching stores have no email; phone them from the list.` : ''}</div>`;
+      b.textContent = 'Sent'; b.disabled = true; loadHist(); if (ADM.tab === 'notify') loadNotify();
+    } catch (err) { busy(b, false); delete b.dataset.confirm; $('#bkMsg').innerHTML = `<div class="alert err">${esc(err.message)}</div>`; }
+  };
+  async function loadHist() {
+    const { data } = await sb.from('bulk_sends').select('created_at, subject_en, recipients, sent, failed, is_test, filters, staff:created_by(full_name,email)').order('created_at', { ascending: false }).limit(8);
+    const h = $('#bkHist'); if (!h) return;
+    h.innerHTML = data?.length ? data.map(x => `<li><span class="muted">${esc(fmtDateTime(x.created_at))}</span> · ${x.is_test ? '<b>Test</b>' : `<b>${x.sent} sent</b>${x.failed ? `, ${x.failed} failed` : ''}`} · ${esc(STATUS_LABEL[x.filters?.status] || '')}${x.filters?.exp ? ' · ' + esc(x.filters.exp) : ''} · by ${esc(x.staff?.full_name || x.staff?.email || 'staff')}</li>`).join('') : '<li class="muted">No bulk emails yet.</li>';
+  }
+  count(); loadHist();
+}
+
 async function viewNotify() {
   view().innerHTML = `
     <div class="panel">
@@ -806,6 +889,7 @@ async function viewNotify() {
       <div class="filters">
         <div class="grow"><label class="f" for="nf_q">Search</label><input id="nf_q" type="search" placeholder="Name, store number, city, phone or expiry date (e.g. Oct 31)" value="${esc(NF.q)}"></div>
         <div><label class="f" for="nf_exp">Expires</label><select id="nf_exp" style="width:auto"><option value="">Any month</option></select></div>
+        <div><button class="btn" id="nf_bulk" title="Email every store matching these filters">Email these stores</button></div>
         <div><button class="btn secondary" id="nf_x" title="Spreadsheet of the stores shown, with contact details and personal links">Download list</button></div>
       </div>
       <div class="chips" id="nfChips"></div>
@@ -814,6 +898,7 @@ async function viewNotify() {
   let timer; $('#nf_q').oninput = () => { clearTimeout(timer); timer = setTimeout(() => { NF.q = $('#nf_q').value; NF.page = 0; loadNotify(); }, 300); };
   $('#nf_exp').onchange = e => { NF.exp = e.target.value; NF.page = 0; loadNotify(); };
   $('#nf_x').onclick = exportMailMerge;
+  $('#nf_bulk').onclick = openBulkEmail;
   $('#nfAdd').onclick = () => openCustomerForm();
   loadNotify();
 }

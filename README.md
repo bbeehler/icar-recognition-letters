@@ -35,6 +35,7 @@ Stores whose Gold Class has expired are told so and asked to contact collisiontr
   - the merged letters as one PDF per type (e.g. *GC Plate Letter ENG.pdf*), one letter per page, signed by Scott Sinclair.
   Then **Mark as sent to St. Joseph** files the order under *Past orders*, where it can be downloaded again. The renewal date is the expiry date minus one year, because the export has no payment date.
 - **Notify customers**: filter by *New or renewed*, *Not contacted*, *Contacted*, *Certificate issued* or *Expired*. **Notify** opens the store's personal link, a ready-to-send email (English or French) and a phone script. Log each email or call. **Download list** exports the stores shown, with phone numbers and personal links.
+- **Email these stores** (Notify customers): emails every store matching the current filters (status, expiry month, search) in one go, with a level filter (Gold Class / Aluminum), language (French for Quebec, English elsewhere, or one language for all) and an option to skip stores emailed recently. It shows how many stores will be emailed and how many have no email on file, sends a test to you first, then sends each store its own email with its personal link and logs it in that store's history. Expired and off-the-list stores are never emailed. Sent through Resend by the `send-bulk-email` Edge Function.
 - **Issue it now** (in any store's Notify window): **Email it with attachment** creates an Outlook email (`.eml`) with the certificate and letter attached; **Download only** saves the PDF.
 - **Edit details** (any store): correct the name printed on the certificate. A corrected name is **remembered on every future upload**. Expiry date and Aluminum can also be changed until the next upload.
 - **+ Add a store**: for a store not on the list yet. Admins can remove stores added by hand (this also deletes their certificates and contact history). If a later upload includes the same store number, the list version takes over.
@@ -71,9 +72,19 @@ supabase/migrations/004_manual_entries_and_staff_issue.sql  add stores by hand; 
 supabase/migrations/006_reconcile_list_and_plaque_orders.sql  monthly list checks on/off instead of replacing; St. Joseph orders
 supabase/migrations/005_gold_class_system_export.sql  Gold Class only: system export, store number + postal code,
                                           expiry, new/renewed, name corrections, official letters, Scott Sinclair
+supabase/functions/send-bulk-email/       bulk email to filtered stores (Resend)
 supabase/functions/manage-staff/          team management (create users, reset passwords, deactivate)
 samples/SAMPLE-Active-Gold-Stores.xlsx    made-up stores in the system export format, for practice uploads
 ```
+
+## Bulk email setup (one time)
+
+1. Create a Resend account (resend.com) and add the sending domain `aiacanada.com` (or a subdomain such as `mail.aiacanada.com`). Add the DNS records Resend shows (SPF/DKIM) and wait for it to show *Verified*.
+2. Create an API key in Resend.
+3. In Supabase → Edge Functions → Secrets, add `RESEND_API_KEY` (the key), `MAIL_FROM` (e.g. `I-CAR Canada <collisiontraining@aiacanada.com>`) and optionally `MAIL_REPLY_TO`.
+4. In the app, open **Email these stores** and click **Send me a test**.
+
+Store emails come from the monthly export's email column; the upload fills them in automatically.
 
 ## Setup still to finish
 
@@ -85,4 +96,4 @@ samples/SAMPLE-Active-Gold-Stores.xlsx    made-up stores in the system export fo
 
 ## Rebuilding the back end
 
-In an empty Supabase project, run `001_schema.sql`, `seed.sql`, then migrations `002` to `006` in order. Deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
+In an empty Supabase project, run `001_schema.sql`, `seed.sql`, then migrations `002` to `008` in order. Deploy the function with `supabase functions deploy manage-staff --no-verify-jwt`, and update `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `index.html`. The anon key is public by design; all data access is enforced by row-level security and the database functions.
